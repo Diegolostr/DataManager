@@ -51,7 +51,7 @@ public record CreateLootTableDto(string Name, IEnumerable<CreateLootTableEntryDt
 public record CreateRecipeInputItemDto(string ItemId, int Amount);
 public record CreateRecipeDto(string Name, int? RecipeCost, IEnumerable<CreateRecipeInputItemDto>? InputItems, IEnumerable<string>? OutputItems);
 
-public record CreateNpcShopDto(string? Name, string? LootTableId, IEnumerable<CreateRecipeDto>? Recipes);
+public record CreateNpcShopDto(string? Name = null, string? LootTableId = null, IEnumerable<CreateRecipeDto>? Recipes = null);
 
 // ── Create DTOs (no auto-generated IDs) ────────────────────────────────────
 public record CreateStatDto(string Stat, int? Amount);
