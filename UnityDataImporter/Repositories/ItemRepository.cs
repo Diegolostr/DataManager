@@ -45,6 +45,24 @@ public class ItemRepository(AppDbContext db)
         await db.SaveChangesAsync();
     }
 
+    public async Task DeleteAsync(string itemId)
+    {
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "magicAttacks" WHERE "itemId" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "Stats_Amount" WHERE "item" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "itemEvent" WHERE "itemId" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "lootTableData" WHERE "itemId" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "SoundsArray" WHERE "itemId" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "WeaponData" WHERE "itemId" = {0}""", itemId);
+        await db.Database.ExecuteSqlRawAsync(
+            """DELETE FROM "Items" WHERE "Id" = {0}""", itemId);
+    }
+
     private async Task HandleAudios(Item item, Item? existing, byte[]? blockSoundBytes, byte[]? parryAudioBytes)
     {
         if (blockSoundBytes is { Length: > 0 })

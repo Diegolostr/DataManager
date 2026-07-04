@@ -81,6 +81,12 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         return RedirectBack();
     }
 
+    public async Task<IActionResult> OnPostDeleteItemAsync(string id)
+    {
+        await itemRepository.DeleteAsync(id);
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostEditItemAsync()
     {
         ModelState.Clear();

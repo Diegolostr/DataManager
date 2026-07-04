@@ -413,6 +413,10 @@
                     <button type="button" class="btn btn-outline-warning btn-sm" onclick="enableEdit('@item.Id')">✏️ Editar</button>
                     <button type="button" class="btn btn-success btn-sm" id="btn-save-@item.Id" style="display:none" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
                     <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-@item.Id" style="display:none" onclick="cancelEdit('@item.Id')">✕ Cancelar</button>
+                    <form method="post" asp-page-handler="DeleteItem" style="margin:0" onsubmit="return confirm('¿Eliminar @item.Id?')">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                    </form>
                 </div>
 
                 <!-- 4 cards -->
