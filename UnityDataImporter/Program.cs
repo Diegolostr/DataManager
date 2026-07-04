@@ -6,10 +6,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine($"[DB] Using connection: {connectionString?[..Math.Min(60, connectionString.Length)]}...");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(
-        Environment.GetEnvironmentVariable("DATABASE_URL") ??
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<WeaponDataRepository>();
 builder.Services.AddScoped<MagicAttackRepository>();
