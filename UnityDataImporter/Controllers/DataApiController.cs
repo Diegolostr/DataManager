@@ -125,7 +125,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
                     JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
                     JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
                     r.RecipeCost));
-            return new NpcShopDto(s.Id, recipes, s.LootTableId, s.LootTable?.LootTableName);
+            return new NpcShopDto(s.Id, recipes, s.LootTable?.LootTableName, s.LootTable?.LootTableName);
         }));
     }
 
@@ -211,7 +211,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
                 recipeIds.Add(recipe.Id);
             }
 
-            var lootTable = dto.LootTableId.HasValue ? await db.LootTables.FindAsync(dto.LootTableId.Value) : null;
+            var lootTable = dto.LootTableId is not null ? await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.LootTableId) : null;
             var shop = new Models.NpcShop
             {
                 LootTableId = lootTable?.Id,
@@ -229,7 +229,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
                     JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
                     r.RecipeCost)),
                 shop.LootTableId,
-                null));
+                lootTable?.LootTableName));
         }
         catch (Exception ex)
         {
