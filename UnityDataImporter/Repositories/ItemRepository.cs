@@ -41,6 +41,8 @@ public class ItemRepository(AppDbContext db)
     {
         var existing = await db.Items.AsNoTracking().FirstOrDefaultAsync(i => i.Id == item.Id);
         await HandleAudios(item, existing, blockSoundBytes, parryAudioBytes);
+        if (item.Icon is null && existing?.Icon is not null)
+            item.Icon = existing.Icon;
         db.Items.Update(item);
         await db.SaveChangesAsync();
     }
