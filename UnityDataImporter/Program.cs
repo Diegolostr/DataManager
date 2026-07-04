@@ -49,7 +49,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
-app.MapControllers();
+app.MapControllers().AllowAnonymous();
 app.MapRazorPages()
    .WithStaticAssets();
 
