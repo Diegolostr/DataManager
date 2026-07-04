@@ -44,3 +44,35 @@ public record LootTableDto(long Id, string? Name, IEnumerable<LootTableEntryDto>
 public record RecipeDto(long Id, string Name, string? InputItems, string? OutputItems, int? RecipeCost);
 
 public record NpcShopDto(long Id, string Recipes, long? LootTableId, string? LootTableName);
+
+// ── Create DTOs (no auto-generated IDs) ────────────────────────────────────
+public record CreateStatDto(string Stat, int? Amount);
+public record CreateEventDto(string EventTypeId);
+public record CreateWeaponDto(long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
+public record CreateMagicAttackDto(
+    string MagicType, int? MagicDamage, float? Cooldown,
+    float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
+public record CreateItemAudioDto(string Audio, string? Name, string? Prefix);
+
+public record CreateItemDto(
+    string Id,
+    string? Name,
+    string Description,
+    bool? IsStackable,
+    int? MaxAmount,
+    string? Icon,
+    int? BuyAmount,
+    int? SellAmount,
+    bool? CanBlock,
+    float? BlockAmount,
+    string? ItemRarity,
+    string? ItemType,
+    IEnumerable<CreateStatDto>? ItemStats,
+    IEnumerable<CreateEventDto>? ItemEvents,
+    string? EquipmentSlot,
+    string? HoldType,
+    CreateWeaponDto? WeaponData,
+    IEnumerable<CreateMagicAttackDto>? MagicAttacks,
+    CreateItemAudioDto? BlockSounds,
+    CreateItemAudioDto? ParryAudio,
+    Vector2Dto? Size);

@@ -90,6 +90,74 @@ public class DataApiController(AppDbContext db) : ControllerBase
         return Ok(shops.Select(s => new NpcShopDto(s.Id, s.Recipes, s.LootTableId, s.LootTable?.LootTableName)));
     }
 
+    // POST /api/items
+    [HttpPost("items")]
+    public async Task<IActionResult> CreateItem([FromBody] CreateItemDto dto)
+    {
+        if (await db.Items.AnyAsync(i => i.Id == dto.Id))
+            return Conflict($"Item '{dto.Id}' already exists.");
+
+        // Size
+        var sizeX = dto.Size?.X ?? 1;
+        var sizeY = dto.Size?.Y ?? 1;
+        var vec = new Models.Vector2 { X = sizeX, Y = sizeY };
+        db.Vector2.Add(vec);
+        await db.SaveChangesAsync();
+
+        // Audio
+        long? blockSoundsId = null, parryAudioId = null;
+        if (dto.BlockSounds is not null)
+        {
+            var a = new Models.ItemAudio { Audio = Convert.FromBase64String(dto.BlockSounds.Audio), Name = dto.BlockSounds.Name, Prefix = dto.BlockSounds.Prefix };
+            db.ItemAudio.Add(a); await db.SaveChangesAsync(); blockSoundsId = a.Id;
+        }
+        if (dto.ParryAudio is not null)
+        {
+            var a = new Models.ItemAudio { Audio = Convert.FromBase64String(dto.ParryAudio.Audio), Name = dto.ParryAudio.Name, Prefix = dto.ParryAudio.Prefix };
+            db.ItemAudio.Add(a); await db.SaveChangesAsync(); parryAudioId = a.Id;
+        }
+
+        // Item
+        var item = new Models.Item
+        {
+            Id = dto.Id, Name = dto.Name, Description = dto.Description,
+            IsStackable = dto.IsStackable, MaxAmount = dto.MaxAmount,
+            Icon = dto.Icon is not null ? Convert.FromBase64String(dto.Icon) : null,
+            BuyAmount = dto.BuyAmount, SellAmount = dto.SellAmount,
+            CanBlock = dto.CanBlock, BlockAmount = dto.BlockAmount,
+            ItemRarity = dto.ItemRarity, ItemType = dto.ItemType,
+            EquipmentSlot = dto.EquipmentSlot, HoldType = dto.HoldType,
+            ItemSize = vec.Id, BlockSounds = blockSoundsId, ParryAudio = parryAudioId
+        };
+        db.Items.Add(item);
+        await db.SaveChangesAsync();
+
+        // Stats
+        foreach (var s in dto.ItemStats ?? [])
+            db.StatsAmount.Add(new Models.StatsAmount { Stat = s.Stat, Item = item.Id, Amount = s.Amount });
+
+        // Events
+        foreach (var ev in dto.ItemEvents ?? [])
+            db.ItemEvent.Add(new Models.ItemEvent { ItemId = item.Id, EventTypeId = ev.EventTypeId });
+
+        await db.SaveChangesAsync();
+
+        // Weapon
+        if (dto.WeaponData is not null)
+        {
+            db.WeaponData.Add(new Models.WeaponData { ItemId = item.Id, Damage = dto.WeaponData.Damage, Heaviness = dto.WeaponData.Heaviness, Ammo = dto.WeaponData.Ammo, Cooldown = dto.WeaponData.Cooldown });
+            await db.SaveChangesAsync();
+        }
+
+        // Magic attacks
+        foreach (var m in dto.MagicAttacks ?? [])
+            db.MagicAttacks.Add(new Models.MagicAttack { ItemId = item.Id, MagicType = m.MagicType, MagicDamage = m.MagicDamage, Cooldown = m.Cooldown, ProjectileSpeed = m.ProjectileSpeed, EffectType = m.EffectType, ManaConsumption = m.ManaConsumption, MaxCompanions = m.MaxCompanions });
+
+        await db.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetItem), new { id = item.Id }, null);
+    }
+
     private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks, IEnumerable<Models.ItemEvent> itemEvents, IEnumerable<Models.StatsAmount> stats) => new(
         i.Id,
         i.Name,

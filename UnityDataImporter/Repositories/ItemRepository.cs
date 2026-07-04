@@ -33,6 +33,10 @@ public class ItemRepository(AppDbContext db)
     public async Task AddItemAsync(Item item, byte[]? blockSoundBytes, byte[]? parryAudioBytes, string? blockSoundName, string? parryAudioName)
     {
         await HandleAudios(item, null, blockSoundBytes, parryAudioBytes, blockSoundName, parryAudioName);
+        var size = new Vector2 { X = 1, Y = 1 };
+        db.Vector2.Add(size);
+        await db.SaveChangesAsync();
+        item.ItemSize = size.Id;
         db.Items.Add(item);
         await db.SaveChangesAsync();
     }
