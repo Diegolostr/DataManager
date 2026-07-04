@@ -7,8 +7,7 @@ public class LootTableData
     public int? Probability { get; set; }
     public int? MinAmount { get; set; }
     public int? MaxAmount { get; set; }
-    public long? LootTableId { get; set; }
+    public string? LootTableId { get; set; }
 
     public Item? Item { get; set; }
-    public LootTable? LootTable { get; set; }
 }

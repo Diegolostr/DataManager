@@ -99,12 +99,14 @@ public class DataApiController(AppDbContext db) : ControllerBase
     [HttpGet("loottables")]
     public async Task<IActionResult> GetAllLootTables()
     {
-        var tables = await db.LootTables.Include(l => l.Entries).ToListAsync();
-        return Ok(tables.Select(t => new LootTableDto(
-            t.Id,
-            t.LootTableName,
-            t.Entries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))
-        )));
+        var tables = await db.LootTables.ToListAsync();
+        var entries = await db.LootTableData.ToListAsync();
+        var entriesByName = entries.GroupBy(e => e.LootTableId).ToDictionary(g => g.Key ?? "", g => g.ToList());
+        return Ok(tables.Select(t =>
+        {
+            var tableEntries = entriesByName.GetValueOrDefault(t.LootTableName ?? "") ?? [];
+            return new LootTableDto(t.Id, t.LootTableName, tableEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount)));
+        }));
     }
 
     // GET /api/npcshops
@@ -112,7 +114,19 @@ public class DataApiController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> GetAllNpcShops()
     {
         var shops = await db.NpcsShop.Include(s => s.LootTable).ToListAsync();
-        return Ok(shops.Select(s => new NpcShopDto(s.Id, s.Recipes, s.LootTableId, s.LootTable?.LootTableName)));
+        var allRecipes = await db.Recipes.ToListAsync();
+        return Ok(shops.Select(s =>
+        {
+            var recipeIds = JsonSerializer.Deserialize<List<long>>(s.Recipes) ?? [];
+            var recipes = allRecipes
+                .Where(r => recipeIds.Contains(r.Id))
+                .Select(r => new RecipeDto(
+                    r.Id, r.RecipeName,
+                    JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
+                    JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
+                    r.RecipeCost));
+            return new NpcShopDto(s.Id, recipes, s.LootTableId, s.LootTable?.LootTableName);
+        }));
     }
 
     // POST /api/loottables
@@ -127,15 +141,15 @@ public class DataApiController(AppDbContext db) : ControllerBase
             await db.SaveChangesAsync();
 
             foreach (var e in dto.Entries ?? [])
-                db.LootTableData.Add(new Models.LootTableData { LootTableId = table.Id, ItemId = e.ItemId, Probability = e.Probability, MinAmount = e.MinAmount, MaxAmount = e.MaxAmount });
+                db.LootTableData.Add(new Models.LootTableData { LootTableId = dto.Name, ItemId = e.ItemId, Probability = e.Probability, MinAmount = e.MinAmount, MaxAmount = e.MaxAmount });
             await db.SaveChangesAsync();
 
-            var entryIds = await db.LootTableData.Where(e => e.LootTableId == table.Id).Select(e => e.Id).ToListAsync();
-            table.LootTableDatas = JsonSerializer.Serialize(entryIds);
+            var savedEntries = await db.LootTableData.Where(e => e.LootTableId == dto.Name).ToListAsync();
+            table.LootTableDatas = JsonSerializer.Serialize(savedEntries.Select(e => e.Id));
             await db.SaveChangesAsync();
 
             await tx.CommitAsync();
-            return CreatedAtAction(nameof(GetAllLootTables), new { id = table.Id }, new LootTableDto(table.Id, table.LootTableName, entryIds.Select((id, i) => { var e = dto.Entries!.ElementAt(i); return new LootTableEntryDto(id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount); })));
+            return CreatedAtAction(nameof(GetAllLootTables), new { id = table.Id }, new LootTableDto(table.Id, table.LootTableName, savedEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
         }
         catch (Exception ex)
         {
@@ -197,15 +211,25 @@ public class DataApiController(AppDbContext db) : ControllerBase
                 recipeIds.Add(recipe.Id);
             }
 
+            var lootTable = dto.LootTableId.HasValue ? await db.LootTables.FindAsync(dto.LootTableId.Value) : null;
             var shop = new Models.NpcShop
             {
-                LootTableId = dto.LootTableId,
+                LootTableId = lootTable?.Id,
                 Recipes = JsonSerializer.Serialize(recipeIds)
             };
             db.NpcsShop.Add(shop);
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-            return CreatedAtAction(nameof(GetAllNpcShops), new { id = shop.Id }, new NpcShopDto(shop.Id, shop.Recipes, shop.LootTableId, null));
+            var createdRecipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
+            return CreatedAtAction(nameof(GetAllNpcShops), new { id = shop.Id }, new NpcShopDto(
+                shop.Id,
+                createdRecipes.Select(r => new RecipeDto(
+                    r.Id, r.RecipeName,
+                    JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
+                    JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
+                    r.RecipeCost)),
+                shop.LootTableId,
+                null));
         }
         catch (Exception ex)
         {

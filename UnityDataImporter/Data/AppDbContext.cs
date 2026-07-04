@@ -234,7 +234,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.MaxAmount).HasColumnName("maxAmount");
             e.Property(x => x.LootTableId).HasColumnName("lootTableId");
             e.HasOne(x => x.Item).WithMany().HasForeignKey(x => x.ItemId);
-            e.HasOne(x => x.LootTable).WithMany(l => l.Entries).HasForeignKey(x => x.LootTableId).IsRequired(false);
         });
 
         modelBuilder.Entity<Recipe>(e =>
