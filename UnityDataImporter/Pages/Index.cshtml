@@ -23,7 +23,7 @@
             <span class="stat-label">Total Items</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">@Model.Items.Count(i => i.WeaponData != null)</span>
+            <span class="stat-number">@Model.Items.Count(i => i.Weapon != null)</span>
             <span class="stat-label">Son Armas</span>
         </div>
         <div class="stat-card">
@@ -207,7 +207,18 @@
             <ul class="lookup-list">
                 @foreach (var e in Model.EffectTypes)
                 {
-                    <li><span>@e</span></li>
+                    <li>
+                        <span>@e</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditEffectType" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@e" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@e" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
                 }
             </ul>
             </div>
@@ -227,7 +238,18 @@
             <ul class="lookup-list">
                 @foreach (var m in Model.MagicTypes)
                 {
-                    <li><span>@m</span></li>
+                    <li>
+                        <span>@m</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditMagicType" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@m" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@m" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
                 }
             </ul>
             </div>
@@ -247,12 +269,97 @@
             <ul class="lookup-list">
                 @foreach (var m in Model.MagicStatusEffects)
                 {
-                    <li><span>@m</span></li>
+                    <li>
+                        <span>@m</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditMagicStatusEffect" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@m" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@m" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
                 }
             </ul>
             </div>
         </details>
 
+        <!-- Event Types -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>🎯 Event Types</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); document.getElementById('modalAddEventType').style.display='flex'">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <ul class="lookup-list">
+                @foreach (var e in Model.EventTypes)
+                {
+                    <li>
+                        @if (e.Icon != null)
+                        {
+                            <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(e.Icon)" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated" />
+                        }
+                        <span>@e.Id@(e.EventName != null ? $" — {e.EventName}" : "")</span>
+                        <button class="btn-icon" onclick="openEditEventType('@e.Id', '@(e.EventName ?? "")')">✏️</button>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+    </div>
+
+    <!-- Modal Add Event Type -->
+    <div id="modalAddEventType" class="modal-overlay">
+        <div class="modal-card">
+            <h4>🎯 Nuevo Event Type</h4>
+            <form method="post" asp-page-handler="AddEventType" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label>ID</label>
+                    <input class="form-control" asp-for="NewEventType" placeholder="ID del event type..." required />
+                </div>
+                <div class="mb-3">
+                    <label>Event Name</label>
+                    <input class="form-control" name="NewEventTypeName" placeholder="Nombre del evento..." />
+                </div>
+                <div class="mb-3">
+                    <label>Icon</label>
+                    <input class="form-control" type="file" name="NewEventTypeIcon" accept="image/*" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('modalAddEventType').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Event Type -->
+    <div id="modalEditEventType" class="modal-overlay">
+        <div class="modal-card">
+            <h4>✏️ Editar Event Type</h4>
+            <form method="post" asp-page-handler="EditEventType" enctype="multipart/form-data">
+                <input type="hidden" name="EditId" id="editEventTypeId" />
+                <div class="mb-3">
+                    <label>ID</label>
+                    <input class="form-control" id="editEventTypeIdDisplay" disabled />
+                </div>
+                <div class="mb-3">
+                    <label>Event Name</label>
+                    <input class="form-control" name="EditValue" id="editEventTypeName" placeholder="Nombre del evento..." />
+                </div>
+                <div class="mb-3">
+                    <label>Icon</label>
+                    <input class="form-control" type="file" name="NewEventTypeIcon" accept="image/*" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('modalEditEventType').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <details class="section-foldout">
@@ -332,7 +439,7 @@
                        data-hold="@(item.HoldType?.ToLower() ?? "")"
                        data-stack="@(item.IsStackable?.ToString().ToLower() ?? "")"
                        data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
-                       data-weapon="@(item.WeaponData != null ? "yes" : "no")">
+                       data-weapon="@(item.Weapon != null ? "yes" : "no")">
                         <div class="item-card-icon">
                             @if (item.Icon != null)
                             {
@@ -454,6 +561,13 @@
     function toggleForm(id) {
         const form = document.getElementById(id);
         form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function openEditEventType(id, name) {
+        document.getElementById('editEventTypeId').value = id;
+        document.getElementById('editEventTypeIdDisplay').value = id;
+        document.getElementById('editEventTypeName').value = name;
+        document.getElementById('modalEditEventType').style.display = 'flex';
     }
 
     function toggleEdit(btn) {

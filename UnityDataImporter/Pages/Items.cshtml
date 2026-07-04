@@ -136,25 +136,17 @@
     <div id="addItemEventModal" class="modal-overlay">
         <div class="modal-card">
             <h4>🎯 Añadir Event</h4>
-            <form method="post" asp-page-handler="AddItemEvent" enctype="multipart/form-data">
+            <form method="post" asp-page-handler="AddItemEvent">
                 <input type="hidden" id="addItemEventItemId" name="NewItemEvent.ItemId" />
                 <div class="mb-3">
-                    <label>Event Name</label>
-                    <input class="form-control" name="NewItemEvent.EventName" />
-                </div>
-                <div class="mb-3">
                     <label>Event Type</label>
-                    <div class="input-group">
-                        <select class="form-select" name="NewItemEvent.EventType">
-                            <option value="">-</option>
-                            @foreach (var et in Model.EventTypes) { <option value="@et">@et</option> }
-                        </select>
-                        <button type="button" class="btn btn-outline-secondary" onclick="toggleInline('addEventTypeForm', this)">+</button>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label>Icon</label>
-                    <input class="form-control" type="file" name="NewItemEventIcon" accept="image/*" />
+                    <select class="form-select" name="NewItemEvent.EventTypeId" required>
+                        <option value="">-</option>
+                        @foreach (var et in Model.EventTypes)
+                        {
+                            <option value="@et.Id">@et.Id@(et.EventName != null ? $" — {et.EventName}" : "")</option>
+                        }
+                    </select>
                 </div>
                 <div class="modal-footer-btns">
                     <button type="submit" class="btn btn-success">Guardar</button>
@@ -189,6 +181,36 @@
         </div>
     </div>
 
+    <!-- Modal Add Weapon -->
+    <div id="addWeaponModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>⚔️ Añadir Weapon Data</h4>
+            <form method="post" asp-page-handler="AddWeapon">
+                <input type="hidden" id="addWeaponItemId" name="NewWeapon.ItemId" />
+                <div class="mb-3">
+                    <label>Damage</label>
+                    <input class="form-control" type="number" name="NewWeapon.Damage" />
+                </div>
+                <div class="mb-3">
+                    <label>Heaviness (1-5)</label>
+                    <input class="form-control" type="number" name="NewWeapon.Heaviness" min="1" max="5" />
+                </div>
+                <div class="mb-3">
+                    <label>Cooldown</label>
+                    <input class="form-control" type="number" step="0.01" name="NewWeapon.Cooldown" />
+                </div>
+                <div class="mb-3">
+                    <label>Ammo (Item ID)</label>
+                    <input class="form-control" name="NewWeapon.Ammo" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addWeaponModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Editar Weapon -->
     <div id="editWeaponModal" class="modal-overlay">
         <div class="modal-card">
@@ -209,12 +231,16 @@
                     <input class="form-control" type="number" id="editWeaponDamage" name="EditWeapon.Damage" />
                 </div>
                 <div class="mb-3">
-                    <label>Heaviness</label>
-                    <input class="form-control" type="number" id="editWeaponHeaviness" name="EditWeapon.Heaviness" />
+                    <label>Heaviness (1-5)</label>
+                    <input class="form-control" type="number" id="editWeaponHeaviness" name="EditWeapon.Heaviness" min="1" max="5" />
                 </div>
                 <div class="mb-3">
                     <label>Ammo (Item ID)</label>
                     <input class="form-control" id="editWeaponAmmo" name="EditWeapon.Ammo" />
+                </div>
+                <div class="mb-3">
+                    <label>Cooldown</label>
+                    <input class="form-control" type="number" step="0.01" id="editWeaponCooldown" name="EditWeapon.Cooldown" />
                 </div>
                 <div class="modal-footer-btns">
                     <button type="submit" class="btn btn-success">Guardar</button>
@@ -396,7 +422,7 @@
                  data-hold="@(item.HoldType?.ToLower() ?? "")"
                  data-stack="@(item.IsStackable?.ToString().ToLower() ?? "")"
                  data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
-                 data-weapon="@(item.WeaponData != null ? "yes" : "no")">
+                 data-weapon="@(item.Weapon != null ? "yes" : "no")">
                 <!-- Header -->
                 <div class="item-entry-header">
                     <div class="item-row-icon">
@@ -529,9 +555,9 @@
                                 @foreach (var ie in Model.ItemEventsByItem[item.Id])
                                 {
                                     <div class="ifield">
-                                        <span class="ilabel">@(ie.EventName ?? "-")</span>
+                                        <span class="ilabel">Event</span>
                                         <span class="ivalue d-flex align-items-center gap-2">
-                                            <span class="badge bg-secondary">@(ie.EventTypeNavigation?.Id ?? ie.EventType ?? "-")</span>
+                                            <span class="badge bg-secondary">@(ie.EventType?.Id ?? ie.EventTypeId ?? "#" + ie.Id)</span>
                                             <form method="post" asp-page-handler="DeleteItemEvent" style="display:inline;margin:0">
                                                 <input type="hidden" name="id" value="@ie.Id" />
                                                 <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
@@ -552,7 +578,16 @@
                     <div class="icard">
                         <div class="icard-header">⚔️ Weapon Info</div>
                         <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Weapon Data</span><span class="ivalue">@(item.Weapon != null ? $"DMG {item.Weapon.Damage} | Heavy {item.Weapon.Heaviness}" : "-")</span></div>
+                            <div class="ifield"><span class="ilabel">Weapon Data</span><span class="ivalue d-flex align-items-center gap-2">@(item.Weapon != null ? $"DMG {item.Weapon.Damage} | Heavy {item.Weapon.Heaviness} | CD {item.Weapon.Cooldown}" : "-")
+                                @if (item.Weapon != null)
+                                {
+                                    <button type="button" class="btn btn-outline-info btn-xs" onclick="openEditWeaponModal(@item.Weapon.Id, '@item.Id', @(item.Weapon.Damage?.ToString() ?? "null"), @(item.Weapon.Heaviness?.ToString() ?? "null"), '@(item.Weapon.Ammo ?? "")', @(item.Weapon.Cooldown?.ToString() ?? "null"))">✏️</button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-outline-success btn-xs" onclick="openAddWeaponModal('@item.Id')">+ Añadir</button>
+                                }
+                            </span></div>
                             <div class="ifield"><span class="ilabel">Can Block</span><span class="ivalue">
                                 <select class="form-select form-select-sm" name="EditItem.CanBlock" onchange="onCanBlockChange(this, '@item.Id')" disabled>
                                     <option value="">-</option>
@@ -656,8 +691,9 @@
         <button type="submit" class="btn btn-sm btn-success">✓</button>
         <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addHoldTypeForm')">✕</button>
     </form>
-    <form id="addEventTypeForm" method="post" asp-page-handler="AddEventType" class="inline-add-form" style="display:none;position:absolute">
+    <form id="addEventTypeForm" method="post" asp-page-handler="AddEventType" enctype="multipart/form-data" class="inline-add-form" style="display:none;position:absolute">
         <input class="form-control form-control-sm" name="NewEventTypeValue" placeholder="Nuevo event type..." required />
+        <input type="file" class="form-control form-control-sm" name="NewEventTypeIcon" accept="image/*" />
         <button type="submit" class="btn btn-sm btn-success">✓</button>
         <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addEventTypeForm')">✕</button>
     </form>
@@ -851,7 +887,12 @@
         row.style.display = row.style.display === 'none' ? 'flex' : 'none';
     }
 
-    function openEditWeaponModal(id, itemId, damage, heaviness, ammo) {
+    function openAddWeaponModal(itemId) {
+        document.getElementById('addWeaponItemId').value = itemId;
+        document.getElementById('addWeaponModal').style.display = 'flex';
+    }
+
+    function openEditWeaponModal(id, itemId, damage, heaviness, ammo, cooldown) {
         document.getElementById('editWeaponId').value = id;
         document.getElementById('editWeaponItemId').value = itemId;
         document.getElementById('editWeaponIdDisplay').value = id;
@@ -859,6 +900,7 @@
         document.getElementById('editWeaponDamage').value = damage ?? '';
         document.getElementById('editWeaponHeaviness').value = heaviness ?? '';
         document.getElementById('editWeaponAmmo').value = ammo ?? '';
+        document.getElementById('editWeaponCooldown').value = cooldown ?? '';
         document.getElementById('editWeaponModal').style.display = 'flex';
     }
 </script>

@@ -50,7 +50,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.IsStackable).HasColumnName("isStackable");
             e.Property(x => x.MaxAmount).HasColumnName("maxAmount");
             e.Property(x => x.Icon).HasColumnName("icon");
-            e.Property(x => x.WeaponData).HasColumnName("weaponData");
             e.Property(x => x.ItemSize).HasColumnName("itemSize");
             e.Property(x => x.BuyAmount).HasColumnName("buyAmount");
             e.Property(x => x.SellAmount).HasColumnName("sellAmount");
@@ -66,7 +65,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.ItemSoundType).HasColumnName("itemSoundType");
             e.Property(x => x.HoldType).HasColumnName("holdType");
 
-            e.HasOne(x => x.Weapon).WithMany().HasForeignKey(x => x.WeaponData);
+            e.HasOne(x => x.Weapon).WithOne(w => w.Item).HasForeignKey<WeaponData>(w => w.ItemId).IsRequired(false);
             e.HasOne(x => x.Size).WithMany().HasForeignKey(x => x.ItemSize);
             e.HasOne(x => x.BlockSoundsNavigation).WithMany().HasForeignKey(x => x.BlockSounds);
             e.HasOne(x => x.ParryAudioNavigation).WithMany().HasForeignKey(x => x.ParryAudio);
@@ -86,7 +85,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Damage).HasColumnName("damage");
             e.Property(x => x.Heaviness).HasColumnName("heaviness");
             e.Property(x => x.Ammo).HasColumnName("ammo");
-            e.HasOne(x => x.Item).WithMany().HasForeignKey(x => x.ItemId);
+            e.Property(x => x.Cooldown).HasColumnName("cooldown");
             e.HasOne(x => x.AmmoItem).WithMany().HasForeignKey(x => x.Ammo).IsRequired(false);
         });
 
@@ -198,6 +197,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("eventType");
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Icon).HasColumnName("icon");
+            e.Property(x => x.EventName).HasColumnName("eventName");
         });
 
         modelBuilder.Entity<ItemEvent>(e =>
@@ -206,11 +207,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.ItemId).HasColumnName("itemId");
-            e.Property(x => x.EventName).HasColumnName("eventName");
-            e.Property(x => x.Icon).HasColumnName("icon");
-            e.Property(x => x.EventType).HasColumnName("eventType");
+            e.Property(x => x.EventTypeId).HasColumnName("eventTypeId");
             e.HasOne(x => x.Item).WithMany().HasForeignKey(x => x.ItemId);
-            e.HasOne(x => x.EventTypeNavigation).WithMany().HasForeignKey(x => x.EventType).IsRequired(false);
+            e.HasOne(x => x.EventType).WithMany().HasForeignKey(x => x.EventTypeId).IsRequired(false);
         });
 
         modelBuilder.Entity<LootTable>(e =>

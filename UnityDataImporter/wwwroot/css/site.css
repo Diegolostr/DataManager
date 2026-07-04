@@ -417,8 +417,12 @@
 .sidebar-brand {
     font-weight: 700; font-size: 0.95rem; color: #e0e0e0;
     text-decoration: none; white-space: nowrap; overflow: hidden;
+    display: flex; align-items: center; gap: 0.5rem;
 }
-.sidebar.collapsed .sidebar-brand { display: none; }
+.sidebar-brand-icon { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+.sidebar-brand-text { overflow: hidden; }
+.sidebar.collapsed .sidebar-brand-text { display: none; }
+.sidebar.collapsed .sidebar-brand { gap: 0; justify-content: center; }
 
 .sidebar-toggle {
     background: none; border: none; color: #e0e0e0; cursor: pointer;

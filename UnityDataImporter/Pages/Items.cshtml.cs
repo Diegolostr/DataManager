@@ -19,7 +19,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     public IEnumerable<string> MagicTypes { get; set; } = [];
     public IEnumerable<string> EffectTypes { get; set; } = [];
     public IEnumerable<string> StatTypes { get; set; } = [];
-    public IEnumerable<string> EventTypes { get; set; } = [];
+    public IEnumerable<EventType> EventTypes { get; set; } = [];
     public ILookup<string, ItemEvent> ItemEventsByItem { get; set; } = Enumerable.Empty<ItemEvent>().ToLookup(e => e.ItemId);
     public ILookup<string, MagicAttack> MagicAttacksByItem { get; set; } = Enumerable.Empty<MagicAttack>().ToLookup(m => m.ItemId ?? "");
     public ILookup<string, StatsAmount> StatsByItem { get; set; } = Enumerable.Empty<StatsAmount>().ToLookup(s => s.Item ?? "");
@@ -31,6 +31,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     [BindProperty] public Item NewItem { get; set; } = new();
     [BindProperty] public Item EditItem { get; set; } = new();
     [BindProperty] public WeaponData EditWeapon { get; set; } = new();
+    [BindProperty] public WeaponData NewWeapon { get; set; } = new();
     [BindProperty] public IFormFile? NewBlockSound { get; set; }
     [BindProperty] public IFormFile? NewParryAudio { get; set; }
     [BindProperty] public IFormFile? EditBlockSound { get; set; }
@@ -44,7 +45,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     [BindProperty] public string NewRarityValue { get; set; } = string.Empty;
     [BindProperty] public string NewHoldTypeValue { get; set; } = string.Empty;
     [BindProperty] public string NewEventTypeValue { get; set; } = string.Empty;
-    [BindProperty] public IFormFile? NewItemEventIcon { get; set; }
+    [BindProperty] public IFormFile? NewEventTypeIcon { get; set; }
     [BindProperty] public ItemEvent NewItemEvent { get; set; } = new();
 
     public async Task OnGetAsync(string? itemId)
@@ -57,7 +58,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         MagicAttacksByItem = allMagicAttacks.ToLookup(m => m.ItemId ?? "");
         var allStats = await db.StatsAmount.Include(s => s.StatNavigation).ToListAsync();
         StatsByItem = allStats.ToLookup(s => s.Item ?? "");
-        var allItemEvents = await db.ItemEvent.Include(e => e.EventTypeNavigation).ToListAsync();
+        var allItemEvents = await db.ItemEvent.Include(e => e.EventType).ToListAsync();
         ItemEventsByItem = allItemEvents.ToLookup(e => e.ItemId);
     }
 
@@ -103,6 +104,13 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     {
         ModelState.Clear();
         await weaponDataRepository.UpdateAsync(EditWeapon);
+        return RedirectBack();
+    }
+
+    public async Task<IActionResult> OnPostAddWeaponAsync()
+    {
+        ModelState.Clear();
+        await weaponDataRepository.AddAsync(NewWeapon);
         return RedirectBack();
     }
 
@@ -215,7 +223,12 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     {
         if (!string.IsNullOrWhiteSpace(NewEventTypeValue))
         {
-            db.EventType.Add(new EventType { Id = NewEventTypeValue });
+            var iconBytes = await ReadFileAsync(NewEventTypeIcon);
+            db.EventType.Add(new EventType
+            {
+                Id = NewEventTypeValue,
+                Icon = iconBytes
+            });
             await db.SaveChangesAsync();
         }
         return RedirectBack();
@@ -224,8 +237,6 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
     public async Task<IActionResult> OnPostAddItemEventAsync()
     {
         ModelState.Clear();
-        var iconBytes = await ReadFileAsync(NewItemEventIcon);
-        if (iconBytes is { Length: > 0 }) NewItemEvent.Icon = iconBytes;
         db.ItemEvent.Add(NewItemEvent);
         await db.SaveChangesAsync();
         await SyncItemEventsJsonAsync(NewItemEvent.ItemId);
@@ -294,7 +305,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         MagicTypes = await db.MagicType.Select(m => m.Id).ToListAsync();
         EffectTypes = await db.EffectType.Select(e => e.Id).ToListAsync();
         StatTypes = await db.Stats.Select(s => s.Id).ToListAsync();
-        EventTypes = await db.EventType.Select(e => e.Id).ToListAsync();
+        EventTypes = await db.EventType.ToListAsync();
     }
 
     private static async Task<byte[]?> ReadFileAsync(IFormFile? file)

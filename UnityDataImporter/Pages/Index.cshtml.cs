@@ -24,6 +24,7 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
     public IEnumerable<string> EffectTypes { get; set; } = [];
     public IEnumerable<string> MagicTypes { get; set; } = [];
     public IEnumerable<string> MagicStatusEffects { get; set; } = [];
+    public IEnumerable<EventType> EventTypes { get; set; } = [];
     public int LootTableCount { get; set; }
     public IEnumerable<LootTablePreview> LootTablePreviews { get; set; } = [];
     public int RecipeCount { get; set; }
@@ -39,6 +40,9 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
     [BindProperty] public string NewEffectType { get; set; } = string.Empty;
     [BindProperty] public string NewMagicType { get; set; } = string.Empty;
     [BindProperty] public string NewMagicStatusEffect { get; set; } = string.Empty;
+    [BindProperty] public string NewEventType { get; set; } = string.Empty;
+    [BindProperty] public string NewEventTypeName { get; set; } = string.Empty;
+    [BindProperty] public IFormFile? NewEventTypeIcon { get; set; }
     [BindProperty] public string EditId { get; set; } = string.Empty;
     [BindProperty] public string EditValue { get; set; } = string.Empty;
 
@@ -127,6 +131,28 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
         return RedirectToPage();
     }
 
+    public async Task<IActionResult> OnPostAddEventTypeAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(NewEventType))
+        {
+            byte[]? iconBytes = null;
+            if (NewEventTypeIcon is { Length: > 0 })
+            {
+                using var ms = new MemoryStream();
+                await NewEventTypeIcon.CopyToAsync(ms);
+                iconBytes = ms.ToArray();
+            }
+            db.EventType.Add(new EventType
+            {
+                Id = NewEventType,
+                EventName = string.IsNullOrWhiteSpace(NewEventTypeName) ? null : NewEventTypeName,
+                Icon = iconBytes
+            });
+            await db.SaveChangesAsync();
+        }
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostEditItemTypeAsync()
     {
         var entity = await db.ItemType.FindAsync(EditId);
@@ -155,6 +181,44 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
         return RedirectToPage();
     }
 
+    public async Task<IActionResult> OnPostEditEffectTypeAsync()
+    {
+        var entity = await db.EffectType.FindAsync(EditId);
+        if (entity is not null) { db.EffectType.Remove(entity); db.EffectType.Add(new EffectType { Id = EditValue }); await db.SaveChangesAsync(); }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEditMagicTypeAsync()
+    {
+        var entity = await db.MagicType.FindAsync(EditId);
+        if (entity is not null) { db.MagicType.Remove(entity); db.MagicType.Add(new MagicType { Id = EditValue }); await db.SaveChangesAsync(); }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEditMagicStatusEffectAsync()
+    {
+        var entity = await db.MagicStatusEffect.FindAsync(EditId);
+        if (entity is not null) { db.MagicStatusEffect.Remove(entity); db.MagicStatusEffect.Add(new MagicStatusEffect { Id = EditValue }); await db.SaveChangesAsync(); }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEditEventTypeAsync()
+    {
+        var entity = await db.EventType.FindAsync(EditId);
+        if (entity is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(EditValue)) entity.EventName = EditValue;
+            if (NewEventTypeIcon is { Length: > 0 })
+            {
+                using var ms = new MemoryStream();
+                await NewEventTypeIcon.CopyToAsync(ms);
+                entity.Icon = ms.ToArray();
+            }
+            await db.SaveChangesAsync();
+        }
+        return RedirectToPage();
+    }
+
     private async Task LoadAllAsync()
     {
         Items = await itemRepository.GetAllAsync();
@@ -167,6 +231,7 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
         EffectTypes = await db.EffectType.Select(e => e.Id).ToListAsync();
         MagicTypes = await db.MagicType.Select(m => m.Id).ToListAsync();
         MagicStatusEffects = await db.MagicStatusEffect.Select(m => m.Id).ToListAsync();
+        EventTypes = await db.EventType.ToListAsync();
         var tables = await lootTableRepository.GetAllAsync();
         LootTableCount = tables.Count();
         LootTablePreviews = tables.Select(t => new LootTablePreview(t.Id, t.Entries.Count, t.LootTableName)).ToList();

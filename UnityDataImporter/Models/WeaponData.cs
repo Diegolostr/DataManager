@@ -7,6 +7,7 @@ public class WeaponData
     public long? Damage { get; set; }
     public int? Heaviness { get; set; }
     public string? Ammo { get; set; }
+    public float? Cooldown { get; set; }
 
     public Item? Item { get; set; }
     public Item? AmmoItem { get; set; }

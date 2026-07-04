@@ -1,6 +1,6 @@
 namespace UnityDataImporter.Api;
 
-public record WeaponDataDto(long Id, long? Damage, int? Heaviness, string? Ammo);
+public record WeaponDataDto(long Id, long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
 
 public record MagicAttackDto(
     long Id, string MagicType, int? MagicDamage, float? Cooldown,

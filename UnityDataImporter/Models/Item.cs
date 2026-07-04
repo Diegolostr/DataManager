@@ -8,7 +8,6 @@ public class Item
     public bool? IsStackable { get; set; }
     public int? MaxAmount { get; set; }
     public byte[]? Icon { get; set; }
-    public long? WeaponData { get; set; }
     public long? ItemSize { get; set; }
     public int? BuyAmount { get; set; }
     public int? SellAmount { get; set; }
