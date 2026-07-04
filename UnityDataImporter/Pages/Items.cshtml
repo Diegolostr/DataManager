@@ -450,7 +450,7 @@
                         <div class="icard-header">⚔️ Weapon Info</div>
                         <div class="icard-body">
                             <div class="ifield"><span class="ilabel">Damage</span><span class="ivalue"><input class="form-control form-control-sm" type="number" id="wInline-damage-@item.Id" value="@item.Weapon?.Damage" oninput="syncWeapon('@item.Id')" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Heaviness</span><span class="ivalue"><input class="form-control form-control-sm" type="number" min="1" max="5" id="wInline-heaviness-@item.Id" value="@item.Weapon?.Heaviness" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Heaviness</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-heaviness-@item.Id" value="@item.Weapon?.Heaviness" oninput="syncWeapon('@item.Id')" disabled /></span></div>
                             <div class="ifield"><span class="ilabel">Cooldown</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-cooldown-@item.Id" value="@item.Weapon?.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="syncWeapon('@item.Id')" disabled /></span></div>
                             <div class="ifield"><span class="ilabel">Ammo</span><span class="ivalue"><input class="form-control form-control-sm" id="wInline-ammo-@item.Id" value="@item.Weapon?.Ammo" list="ammoItemList" autocomplete="off" oninput="syncWeapon('@item.Id')" disabled /></span></div>
                         </div>
@@ -628,7 +628,7 @@
     // ── Weapon ──────────────────────────────────────────────────────────────
     function syncWeapon(itemId) {
         const damage = parseInt(document.getElementById('wInline-damage-' + itemId).value) || null;
-        const heaviness = parseInt(document.getElementById('wInline-heaviness-' + itemId).value) || null;
+        const heaviness = parseFloat(document.getElementById('wInline-heaviness-' + itemId).value) || null;
         const cooldown = parseFloat(document.getElementById('wInline-cooldown-' + itemId).value) || null;
         const ammo = document.getElementById('wInline-ammo-' + itemId).value || null;
         getState(itemId).weapon = (damage || heaviness || cooldown || ammo) ? { damage, heaviness, ammo, cooldown } : null;

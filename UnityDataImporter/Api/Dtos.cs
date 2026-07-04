@@ -1,6 +1,6 @@
 namespace UnityDataImporter.Api;
 
-public record WeaponDataDto(long Id, long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
+public record WeaponDataDto(long Id, long? Damage, float? Heaviness, string? Ammo, float? Cooldown);
 
 public record Vector2Dto(double X, double? Y);
 
@@ -48,7 +48,7 @@ public record NpcShopDto(long Id, string Recipes, long? LootTableId, string? Loo
 // ── Create DTOs (no auto-generated IDs) ────────────────────────────────────
 public record CreateStatDto(string Stat, int? Amount);
 public record CreateEventDto(string EventTypeId);
-public record CreateWeaponDto(long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
+public record CreateWeaponDto(long? Damage, float? Heaviness, string? Ammo, float? Cooldown);
 public record CreateMagicAttackDto(
     string MagicType, int? MagicDamage, float? Cooldown,
     float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);

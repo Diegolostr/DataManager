@@ -321,6 +321,6 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
 
     private record PendingStat(string Stat, int? Amount);
     private record PendingEvent(string? EventTypeId);
-    private record PendingWeapon(long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
+    private record PendingWeapon(long? Damage, float? Heaviness, string? Ammo, float? Cooldown);
     private record PendingMagic(long Id, string MagicType, int? MagicDamage, float? Cooldown, float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
 }
