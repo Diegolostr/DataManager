@@ -200,8 +200,8 @@
                     <input class="form-control" type="number" step="0.01" name="NewWeapon.Cooldown" />
                 </div>
                 <div class="mb-3">
-                    <label>Ammo (Item ID)</label>
-                    <input class="form-control" name="NewWeapon.Ammo" />
+                    <label>Ammo (Item)</label>
+                    <input class="form-control" name="NewWeapon.Ammo" id="newWeaponAmmo" list="ammoItemList" placeholder="Buscar item..." autocomplete="off" />
                 </div>
                 <div class="modal-footer-btns">
                     <button type="submit" class="btn btn-success">Guardar</button>
@@ -235,8 +235,8 @@
                     <input class="form-control" type="number" id="editWeaponHeaviness" name="EditWeapon.Heaviness" min="1" max="5" />
                 </div>
                 <div class="mb-3">
-                    <label>Ammo (Item ID)</label>
-                    <input class="form-control" id="editWeaponAmmo" name="EditWeapon.Ammo" />
+                    <label>Ammo (Item)</label>
+                    <input class="form-control" id="editWeaponAmmo" name="EditWeapon.Ammo" list="ammoItemList" placeholder="Buscar item..." autocomplete="off" />
                 </div>
                 <div class="mb-3">
                     <label>Cooldown</label>
@@ -506,13 +506,13 @@
                                 </select>
                             </span></div>
                             <div class="ifield"><span class="ilabel">Item Sound</span><span class="ivalue">@(item.SoundType?.Sound ?? "-")</span></div>
-                            <div class="ifield" id="field-holdtype-@item.Id"><span class="ilabel">Hold Type</span><span class="ivalue">
+                            <div class="ifield" id="field-holdtype-@item.Id" style="display:@(new[]{ "sword","bow","book","shield" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")"><span class="ilabel">Hold Type</span><span class="ivalue">
                                 <select class="form-select form-select-sm" name="EditItem.HoldType" disabled>
                                     <option value="">-</option>
                                     @foreach (var h in Model.HoldTypes) { <option value="@h" selected="@(item.HoldType == h ? "selected" : null)">@h</option> }
                                 </select>
                             </span></div>
-                            <div class="ifield" id="field-equipslot-@item.Id"><span class="ilabel">Equipment Slot</span><span class="ivalue">
+                            <div class="ifield" id="field-equipslot-@item.Id" style="display:@(new[]{ "sword","bow","book","armor","shield","weapon","accesory" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")"><span class="ilabel">Equipment Slot</span><span class="ivalue">
                                 <select class="form-select form-select-sm" name="EditItem.EquipmentSlot" disabled>
                                     <option value="">-</option>
                                     @foreach (var s in Model.EquipmentSlots) { <option value="@s" selected="@(item.EquipmentSlot == s ? "selected" : null)">@s</option> }
@@ -599,15 +599,15 @@
                                     <option value="false" selected="@(item.CanBlock == false ? "selected" : null)">No</option>
                                 </select>
                             </span></div>
-                            <div class="ifield" id="field-blockamount-@item.Id"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" disabled /></span></div>
-                            <div class="ifield" id="field-blocksound-@item.Id"><span class="ilabel">Block Sound</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                            <div class="ifield" id="field-blockamount-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" disabled /></span></div>
+                            <div class="ifield" id="field-blocksound-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Block Sound</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
                                 @if (item.BlockSoundsNavigation != null)
                                 {
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.BlockSoundsNavigation.Name ?? $"#{item.BlockSoundsNavigation.Id}")</span>
                                 }
                                 <input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled />
                             </span></div>
-                            <div class="ifield" id="field-parryaudio-@item.Id"><span class="ilabel">Parry Audio</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                            <div class="ifield" id="field-parryaudio-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Parry Audio</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
                                 @if (item.ParryAudioNavigation != null)
                                 {
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.ParryAudioNavigation.Name ?? $"#{item.ParryAudioNavigation.Id}")</span>
@@ -713,6 +713,13 @@
         <button type="submit" class="btn btn-sm btn-success">✓</button>
         <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addEventTypeForm')">✕</button>
     </form>
+
+    <datalist id="ammoItemList">
+        @foreach (var i in Model.Items)
+        {
+            <option value="@i.Id">@(i.Name != null ? $"{i.Id} — {i.Name}" : i.Id)</option>
+        }
+    </datalist>
 </div>
 
 <script>
