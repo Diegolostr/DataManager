@@ -2,6 +2,8 @@ namespace UnityDataImporter.Api;
 
 public record WeaponDataDto(long Id, long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
 
+public record ItemAudioDto(long Id, string Audio);
+
 public record MagicAttackDto(
     long Id, string MagicType, int? MagicDamage, float? Cooldown,
     float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
@@ -24,7 +26,9 @@ public record ItemDto(
     string? EquipmentSlot,
     string? HoldType,
     WeaponDataDto? WeaponData,
-    IEnumerable<MagicAttackDto> MagicAttacks);
+    IEnumerable<MagicAttackDto> MagicAttacks,
+    ItemAudioDto? BlockSounds,
+    ItemAudioDto? ParryAudio);
 
 public record LootTableEntryDto(long Id, string ItemId, int? Probability, int? MinAmount, int? MaxAmount);
 
