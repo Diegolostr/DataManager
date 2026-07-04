@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+var connectionString = Environment.GetEnvironmentVariable("DB_CONN")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
 Console.WriteLine($"[DB] Using connection: {connectionString?[..Math.Min(60, connectionString.Length)]}...");
