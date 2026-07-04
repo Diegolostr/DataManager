@@ -78,7 +78,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         ModelState.Clear();
         var blockSound = await ReadFileAsync(NewBlockSound);
         var parryAudio = await ReadFileAsync(NewParryAudio);
-        await itemRepository.AddItemAsync(NewItem, blockSound, parryAudio);
+        await itemRepository.AddItemAsync(NewItem, blockSound, parryAudio, NewBlockSound?.FileName, NewParryAudio?.FileName);
         return RedirectBack();
     }
 
@@ -93,7 +93,7 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         ModelState.Clear();
         var blockSound = await ReadFileAsync(EditBlockSound);
         var parryAudio = await ReadFileAsync(EditParryAudio);
-        await itemRepository.UpdateItemAsync(EditItem, blockSound, parryAudio);
+        await itemRepository.UpdateItemAsync(EditItem, blockSound, parryAudio, EditBlockSound?.FileName, EditParryAudio?.FileName);
         var iconBytes = await ReadFileAsync(EditIcon);
         if (iconBytes is { Length: > 0 })
             await itemRepository.PostImageAsync(EditItem.Id, iconBytes);

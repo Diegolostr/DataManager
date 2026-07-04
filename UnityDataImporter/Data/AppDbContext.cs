@@ -95,6 +95,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Audio).HasColumnName("audio");
+            e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.Prefix).HasColumnName("prefix");
         });
 
         modelBuilder.Entity<InventorySound>(e =>

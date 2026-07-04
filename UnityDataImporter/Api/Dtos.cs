@@ -2,7 +2,9 @@ namespace UnityDataImporter.Api;
 
 public record WeaponDataDto(long Id, long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
 
-public record ItemAudioDto(long Id, string Audio);
+public record ItemAudioDto(long Id, string Audio, string? Name, string? Prefix);
+
+public record ItemEventDto(long Id, string? EventTypeId, string? EventName, string? EventIcon);
 
 public record MagicAttackDto(
     long Id, string MagicType, int? MagicDamage, float? Cooldown,
@@ -22,7 +24,7 @@ public record ItemDto(
     string? ItemRarity,
     string? ItemType,
     string? ItemStats,
-    string? ItemEvents,
+    IEnumerable<ItemEventDto> ItemEvents,
     string? EquipmentSlot,
     string? HoldType,
     WeaponDataDto? WeaponData,

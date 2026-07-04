@@ -29,7 +29,10 @@ public class DataApiController(AppDbContext db) : ControllerBase
         var magicAttacks = await db.MagicAttacks.ToListAsync();
         var magicByItem = magicAttacks.GroupBy(m => m.ItemId).ToDictionary(g => g.Key!, g => g.ToList());
 
-        return Ok(items.Select(i => MapItem(i, magicByItem.GetValueOrDefault(i.Id) ?? [])));
+        var itemEvents = await db.ItemEvent.Include(e => e.EventType).ToListAsync();
+        var eventsByItem = itemEvents.GroupBy(e => e.ItemId).ToDictionary(g => g.Key, g => g.ToList());
+
+        return Ok(items.Select(i => MapItem(i, magicByItem.GetValueOrDefault(i.Id) ?? [], eventsByItem.GetValueOrDefault(i.Id) ?? [])));
     }
 
     // GET /api/items/{id}
@@ -51,7 +54,8 @@ public class DataApiController(AppDbContext db) : ControllerBase
         if (item is null) return NotFound();
 
         var magicAttacks = await db.MagicAttacks.Where(m => m.ItemId == id).ToListAsync();
-        return Ok(MapItem(item, magicAttacks));
+        var itemEvents = await db.ItemEvent.Include(e => e.EventType).Where(e => e.ItemId == id).ToListAsync();
+        return Ok(MapItem(item, magicAttacks, itemEvents));
     }
 
     // GET /api/recipes
@@ -82,7 +86,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         return Ok(shops.Select(s => new NpcShopDto(s.Id, s.Recipes, s.LootTableId, s.LootTable?.LootTableName)));
     }
 
-    private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks) => new(
+    private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks, IEnumerable<Models.ItemEvent> itemEvents) => new(
         i.Id,
         i.Name,
         i.Description,
@@ -96,12 +100,12 @@ public class DataApiController(AppDbContext db) : ControllerBase
         i.ItemRarity,
         i.ItemType,
         i.ItemStats,
-        i.ItemEvents,
+        itemEvents.Select(e => new ItemEventDto(e.Id, e.EventTypeId, e.EventType?.EventName, e.EventType?.Icon is not null ? Convert.ToBase64String(e.EventType.Icon) : null)),
         i.EquipmentSlot,
         i.HoldType,
         i.Weapon is null ? null : new WeaponDataDto(i.Weapon.Id, i.Weapon.Damage, i.Weapon.Heaviness, i.Weapon.Ammo, i.Weapon.Cooldown),
         magicAttacks.Select(m => new MagicAttackDto(m.Id, m.MagicType, m.MagicDamage, m.Cooldown, m.ProjectileSpeed, m.EffectType, m.ManaConsumption, m.MaxCompanions)),
-        i.BlockSoundsNavigation is null ? null : new ItemAudioDto(i.BlockSoundsNavigation.Id, Convert.ToBase64String(i.BlockSoundsNavigation.Audio)),
-        i.ParryAudioNavigation is null ? null : new ItemAudioDto(i.ParryAudioNavigation.Id, Convert.ToBase64String(i.ParryAudioNavigation.Audio))
+        i.BlockSoundsNavigation is null ? null : new ItemAudioDto(i.BlockSoundsNavigation.Id, Convert.ToBase64String(i.BlockSoundsNavigation.Audio), i.BlockSoundsNavigation.Name, i.BlockSoundsNavigation.Prefix),
+        i.ParryAudioNavigation is null ? null : new ItemAudioDto(i.ParryAudioNavigation.Id, Convert.ToBase64String(i.ParryAudioNavigation.Audio), i.ParryAudioNavigation.Name, i.ParryAudioNavigation.Prefix)
     );
 }

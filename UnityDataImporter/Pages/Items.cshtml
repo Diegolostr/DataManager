@@ -557,6 +557,10 @@
                                     <div class="ifield">
                                         <span class="ilabel">Event</span>
                                         <span class="ivalue d-flex align-items-center gap-2">
+                                            @if (ie.EventType?.Icon != null)
+                                            {
+                                                <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(ie.EventType.Icon)" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated" />
+                                            }
                                             <span class="badge bg-secondary">@(ie.EventType?.Id ?? ie.EventTypeId ?? "#" + ie.Id)</span>
                                             <form method="post" asp-page-handler="DeleteItemEvent" style="display:inline;margin:0">
                                                 <input type="hidden" name="id" value="@ie.Id" />
@@ -596,8 +600,20 @@
                                 </select>
                             </span></div>
                             <div class="ifield" id="field-blockamount-@item.Id"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" disabled /></span></div>
-                            <div class="ifield" id="field-blocksound-@item.Id"><span class="ilabel">Block Sound</span><span class="ivalue"><input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled /></span></div>
-                            <div class="ifield" id="field-parryaudio-@item.Id"><span class="ilabel">Parry Audio</span><span class="ivalue"><input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" disabled /></span></div>
+                            <div class="ifield" id="field-blocksound-@item.Id"><span class="ilabel">Block Sound</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                                @if (item.BlockSoundsNavigation != null)
+                                {
+                                    <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.BlockSoundsNavigation.Name ?? $"#{item.BlockSoundsNavigation.Id}")</span>
+                                }
+                                <input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled />
+                            </span></div>
+                            <div class="ifield" id="field-parryaudio-@item.Id"><span class="ilabel">Parry Audio</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                                @if (item.ParryAudioNavigation != null)
+                                {
+                                    <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.ParryAudioNavigation.Name ?? $"#{item.ParryAudioNavigation.Id}")</span>
+                                }
+                                <input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" disabled />
+                            </span></div>
                         </div>
                     </div>
 

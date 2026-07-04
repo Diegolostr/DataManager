@@ -30,17 +30,17 @@ public class ItemRepository(AppDbContext db)
         return item;
     }
 
-    public async Task AddItemAsync(Item item, byte[]? blockSoundBytes, byte[]? parryAudioBytes)
+    public async Task AddItemAsync(Item item, byte[]? blockSoundBytes, byte[]? parryAudioBytes, string? blockSoundName, string? parryAudioName)
     {
-        await HandleAudios(item, null, blockSoundBytes, parryAudioBytes);
+        await HandleAudios(item, null, blockSoundBytes, parryAudioBytes, blockSoundName, parryAudioName);
         db.Items.Add(item);
         await db.SaveChangesAsync();
     }
 
-    public async Task UpdateItemAsync(Item item, byte[]? blockSoundBytes, byte[]? parryAudioBytes)
+    public async Task UpdateItemAsync(Item item, byte[]? blockSoundBytes, byte[]? parryAudioBytes, string? blockSoundName, string? parryAudioName)
     {
         var existing = await db.Items.AsNoTracking().FirstOrDefaultAsync(i => i.Id == item.Id);
-        await HandleAudios(item, existing, blockSoundBytes, parryAudioBytes);
+        await HandleAudios(item, existing, blockSoundBytes, parryAudioBytes, blockSoundName, parryAudioName);
         if (item.Icon is null && existing?.Icon is not null)
             item.Icon = existing.Icon;
         db.Items.Update(item);
@@ -65,11 +65,11 @@ public class ItemRepository(AppDbContext db)
             """DELETE FROM "Items" WHERE "Id" = {0}""", itemId);
     }
 
-    private async Task HandleAudios(Item item, Item? existing, byte[]? blockSoundBytes, byte[]? parryAudioBytes)
+    private async Task HandleAudios(Item item, Item? existing, byte[]? blockSoundBytes, byte[]? parryAudioBytes, string? blockSoundName, string? parryAudioName)
     {
         if (blockSoundBytes is { Length: > 0 })
         {
-            var audio = await UpsertAudio(existing?.BlockSounds, blockSoundBytes);
+            var audio = await UpsertAudio(existing?.BlockSounds, blockSoundBytes, blockSoundName, "Block");
             item.BlockSounds = audio.Id;
         }
         else
@@ -79,7 +79,7 @@ public class ItemRepository(AppDbContext db)
 
         if (parryAudioBytes is { Length: > 0 })
         {
-            var audio = await UpsertAudio(existing?.ParryAudio, parryAudioBytes);
+            var audio = await UpsertAudio(existing?.ParryAudio, parryAudioBytes, parryAudioName, "Parry");
             item.ParryAudio = audio.Id;
         }
         else
@@ -88,7 +88,7 @@ public class ItemRepository(AppDbContext db)
         }
     }
 
-    private async Task<ItemAudio> UpsertAudio(long? existingId, byte[] audioBytes)
+    private async Task<ItemAudio> UpsertAudio(long? existingId, byte[] audioBytes, string? name, string? prefix)
     {
         if (existingId.HasValue)
         {
@@ -96,12 +96,14 @@ public class ItemRepository(AppDbContext db)
             if (existing is not null)
             {
                 existing.Audio = audioBytes;
+                existing.Name = name;
+                existing.Prefix = prefix;
                 await db.SaveChangesAsync();
                 return existing;
             }
         }
 
-        var newAudio = new ItemAudio { Audio = audioBytes };
+        var newAudio = new ItemAudio { Audio = audioBytes, Name = name, Prefix = prefix };
         db.ItemAudio.Add(newAudio);
         await db.SaveChangesAsync();
         return newAudio;
