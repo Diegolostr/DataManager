@@ -1,10 +1,20 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UnityDataImporter.Data;
 using UnityDataImporter.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(o =>
+    {
+        o.LoginPath = "/Login";
+        o.AccessDeniedPath = "/Login";
+        o.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
+
+builder.Services.AddRazorPages(o =>
+    o.Conventions.AuthorizeFolder("/").AllowAnonymousToPage("/Login"));
 builder.Services.AddControllers();
 var connectionString = Environment.GetEnvironmentVariable("DB_CONN")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
@@ -35,6 +45,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

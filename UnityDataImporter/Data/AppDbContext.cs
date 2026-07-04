@@ -5,6 +5,7 @@ namespace UnityDataImporter.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<User> Users { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<WeaponData> WeaponData { get; set; }
     public DbSet<ItemAudio> ItemAudio { get; set; }
@@ -30,6 +31,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<User>(e =>
+        {
+            e.ToTable("users");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Username).HasColumnName("username");
+            e.Property(x => x.Password).HasColumnName("password");
+        });
+
         modelBuilder.Entity<Item>(e =>
         {
             e.ToTable("Items");

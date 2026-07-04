@@ -1,0 +1,41 @@
+@page
+@model UnityDataImporter.Pages.LoginModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - UnityDataImporter</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" />
+    <style>
+        body { background: #1e1e1e; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-box { background: #252525; border: 1px solid #3a3a3a; border-radius: 0.375rem; padding: 2rem; width: 100%; max-width: 360px; }
+        .login-box h1 { color: #e0e0e0; font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; }
+        label { color: #9a9a9a; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+        input { width: 100%; padding: 0.4em 0.625em; background: #2e2e2e; border: 1px solid #3a3a3a; border-radius: 0.375rem; color: #e0e0e0; font-size: 0.875rem; box-sizing: border-box; margin-bottom: 1rem; }
+        input:focus { outline: none; border-color: #8a8a8a; }
+        button { width: 100%; padding: 0.5em; background: #4a4a4a; color: #e0e0e0; border: 1px solid #555; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+        button:hover { background: #5a5a5a; }
+        .error { color: #e0a0a0; font-size: 0.8rem; margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>🔐 UnityData</h1>
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <p class="error">@Model.ErrorMessage</p>
+        }
+        <form method="post">
+            <label>Username</label>
+            <input type="text" asp-for="Username" required autofocus />
+            <label>Password</label>
+            <input type="password" asp-for="Password" required />
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>
