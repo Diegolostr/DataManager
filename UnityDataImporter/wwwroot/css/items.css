@@ -1,1 +1,3 @@
-/* items.css — estilos consolidados en site.css */
+/* items.css */
+.edit-only { display: none; }
+.item-entry.editing .edit-only { display: revert; }

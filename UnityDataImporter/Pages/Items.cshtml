@@ -132,218 +132,81 @@
         </div>
     </div>
 
-    <!-- Modal Add Item Event -->
+    <!-- Modal Add Item Event (JS only, no server submit) -->
     <div id="addItemEventModal" class="modal-overlay">
         <div class="modal-card">
             <h4>🎯 Añadir Event</h4>
-            <form method="post" asp-page-handler="AddItemEvent">
-                <input type="hidden" id="addItemEventItemId" name="NewItemEvent.ItemId" />
-                <div class="mb-3">
-                    <label>Event Type</label>
-                    <select class="form-select" name="NewItemEvent.EventTypeId" required>
-                        <option value="">-</option>
-                        @foreach (var et in Model.EventTypes)
-                        {
-                            <option value="@et.Id">@et.Id@(et.EventName != null ? $" — {et.EventName}" : "")</option>
-                        }
-                    </select>
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addItemEventModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
+            <div class="mb-3">
+                <label>Event Type</label>
+                <select class="form-select" id="pendingEventTypeSelect">
+                    <option value="">-</option>
+                    @foreach (var et in Model.EventTypes)
+                    {
+                        <option value="@et.Id" data-name="@(et.EventName ?? "")" data-icon="@(et.Icon != null ? UnityDataImporter.Utils.ImageUtils.ToBase64(et.Icon) : "")">
+                            @et.Id@(et.EventName != null ? $" — {et.EventName}" : "")
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn btn-success" onclick="confirmAddEvent()">Añadir</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addItemEventModal').style.display='none'">Cancelar</button>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Add Stat -->
+    <!-- Modal Add Stat (JS only) -->
     <div id="addStatModal" class="modal-overlay">
         <div class="modal-card">
             <h4>📊 Añadir Stat</h4>
-            <form method="post" asp-page-handler="AddStat">
-                <input type="hidden" id="addStatItemId" name="NewStat.Item" />
-                <div class="mb-3">
-                    <label>Stat</label>
-                    <select class="form-select" name="NewStat.Stat" required>
-                        <option value="">-</option>
-                        @foreach (var s in Model.StatTypes) { <option value="@s">@s</option> }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label>Amount</label>
-                    <input class="form-control" type="number" name="NewStat.Amount" required />
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addStatModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
+            <div class="mb-3">
+                <label>Stat</label>
+                <select class="form-select" id="pendingStatSelect">
+                    <option value="">-</option>
+                    @foreach (var s in Model.StatTypes) { <option value="@s">@s</option> }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Amount</label>
+                <input class="form-control" type="number" id="pendingStatAmount" />
+            </div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn btn-success" onclick="confirmAddStat()">Añadir</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addStatModal').style.display='none'">Cancelar</button>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Add Weapon -->
-    <div id="addWeaponModal" class="modal-overlay">
-        <div class="modal-card">
-            <h4>⚔️ Añadir Weapon Data</h4>
-            <form method="post" asp-page-handler="AddWeapon">
-                <input type="hidden" id="addWeaponItemId" name="NewWeapon.ItemId" />
-                <div class="mb-3">
-                    <label>Damage</label>
-                    <input class="form-control" type="number" name="NewWeapon.Damage" />
-                </div>
-                <div class="mb-3">
-                    <label>Heaviness (1-5)</label>
-                    <input class="form-control" type="number" name="NewWeapon.Heaviness" min="1" max="5" />
-                </div>
-                <div class="mb-3">
-                    <label>Cooldown</label>
-                    <input class="form-control" type="number" step="0.01" name="NewWeapon.Cooldown" />
-                </div>
-                <div class="mb-3">
-                    <label>Ammo (Item)</label>
-                    <input class="form-control" name="NewWeapon.Ammo" id="newWeaponAmmo" list="ammoItemList" placeholder="Buscar item..." autocomplete="off" />
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addWeaponModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Modal Weapon (JS only) -->
+    <!-- removed: weapon fields are now inline in the card -->
 
-    <!-- Modal Editar Weapon -->
-    <div id="editWeaponModal" class="modal-overlay">
-        <div class="modal-card">
-            <h4>⚔️ Editar Weapon Data</h4>
-            <form method="post" asp-page-handler="EditWeapon">
-                <input type="hidden" id="editWeaponId" name="EditWeapon.Id" />
-                <input type="hidden" id="editWeaponItemId" name="EditWeapon.ItemId" />
-                <div class="mb-3">
-                    <label>Weapon ID</label>
-                    <input class="form-control" id="editWeaponIdDisplay" disabled />
-                </div>
-                <div class="mb-3">
-                    <label>Item ID</label>
-                    <input class="form-control" id="editWeaponItemIdDisplay" disabled />
-                </div>
-                <div class="mb-3">
-                    <label>Damage</label>
-                    <input class="form-control" type="number" id="editWeaponDamage" name="EditWeapon.Damage" />
-                </div>
-                <div class="mb-3">
-                    <label>Heaviness (1-5)</label>
-                    <input class="form-control" type="number" id="editWeaponHeaviness" name="EditWeapon.Heaviness" min="1" max="5" />
-                </div>
-                <div class="mb-3">
-                    <label>Ammo (Item)</label>
-                    <input class="form-control" id="editWeaponAmmo" name="EditWeapon.Ammo" list="ammoItemList" placeholder="Buscar item..." autocomplete="off" />
-                </div>
-                <div class="mb-3">
-                    <label>Cooldown</label>
-                    <input class="form-control" type="number" step="0.01" id="editWeaponCooldown" name="EditWeapon.Cooldown" />
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editWeaponModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Add Magic Attack -->
+    <!-- Modal Add Magic Attack (JS only) -->
     <div id="addMagicModal" class="modal-overlay">
         <div class="modal-card">
-            <h4>✨ Nueva Magic Attack</h4>
-            <form method="post" asp-page-handler="AddMagicAttack">
-                <input type="hidden" id="addMagicItemId" name="NewMagicAttack.ItemId" />
-                <div class="mb-3">
-                    <label>Magic Type</label>
-                    <select class="form-select" name="NewMagicAttack.MagicType" required>
-                        <option value="">-</option>
-                        @foreach (var mt in Model.MagicTypes) { <option value="@mt">@mt</option> }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label>Magic Damage</label>
-                    <input class="form-control" type="number" name="NewMagicAttack.MagicDamage" />
-                </div>
-                <div class="mb-3">
-                    <label>Cooldown</label>
-                    <input class="form-control" type="number" step="0.01" name="NewMagicAttack.Cooldown" />
-                </div>
-                <div class="mb-3">
-                    <label>Projectile Speed</label>
-                    <input class="form-control" type="number" step="0.01" name="NewMagicAttack.ProjectileSpeed" />
-                </div>
-                <div class="mb-3">
-                    <label>Effect Type</label>
-                    <select class="form-select" name="NewMagicAttack.EffectType">
-                        <option value="">-</option>
-                        @foreach (var et in Model.EffectTypes) { <option value="@et">@et</option> }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label>Mana Consumption</label>
-                    <input class="form-control" type="number" name="NewMagicAttack.ManaConsumption" />
-                </div>
-                <div class="mb-3">
-                    <label>Max Companions</label>
-                    <input class="form-control" type="number" name="NewMagicAttack.MaxCompanions" />
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addMagicModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Edit Magic Attack -->
-    <div id="editMagicModal" class="modal-overlay">
-        <div class="modal-card">
-            <h4>✏️ Editar Magic Attack</h4>
-            <form method="post" asp-page-handler="EditMagicAttack">
-                <input type="hidden" id="editMagicId" name="NewMagicAttack.Id" />
-                <input type="hidden" id="editMagicItemId" name="NewMagicAttack.ItemId" />
-                <div class="mb-3">
-                    <label>Magic Type</label>
-                    <select class="form-select" id="editMagicType" name="NewMagicAttack.MagicType" required>
-                        <option value="">-</option>
-                        @foreach (var mt in Model.MagicTypes) { <option value="@mt">@mt</option> }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label>Magic Damage</label>
-                    <input class="form-control" type="number" id="editMagicDamage" name="NewMagicAttack.MagicDamage" />
-                </div>
-                <div class="mb-3">
-                    <label>Cooldown</label>
-                    <input class="form-control" type="number" step="0.01" id="editMagicCooldown" name="NewMagicAttack.Cooldown" />
-                </div>
-                <div class="mb-3">
-                    <label>Projectile Speed</label>
-                    <input class="form-control" type="number" step="0.01" id="editMagicProjectileSpeed" name="NewMagicAttack.ProjectileSpeed" />
-                </div>
-                <div class="mb-3">
-                    <label>Effect Type</label>
-                    <select class="form-select" id="editMagicEffectType" name="NewMagicAttack.EffectType">
-                        <option value="">-</option>
-                        @foreach (var et in Model.EffectTypes) { <option value="@et">@et</option> }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label>Mana Consumption</label>
-                    <input class="form-control" type="number" id="editMagicMana" name="NewMagicAttack.ManaConsumption" />
-                </div>
-                <div class="mb-3">
-                    <label>Max Companions</label>
-                    <input class="form-control" type="number" id="editMagicCompanions" name="NewMagicAttack.MaxCompanions" />
-                </div>
-                <div class="modal-footer-btns">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editMagicModal').style.display='none'">Cancelar</button>
-                </div>
-            </form>
+            <h4>✨ Magic Attack</h4>
+            <input type="hidden" id="magicModalItemId" />
+            <input type="hidden" id="magicModalEditId" value="0" />
+            <div class="mb-3"><label>Magic Type</label>
+                <select class="form-select" id="mMagicType">
+                    <option value="">-</option>
+                    @foreach (var mt in Model.MagicTypes) { <option value="@mt">@mt</option> }
+                </select>
+            </div>
+            <div class="mb-3"><label>Magic Damage</label><input class="form-control" type="number" id="mDamage" /></div>
+            <div class="mb-3"><label>Cooldown</label><input class="form-control" type="number" step="0.01" id="mCooldown" /></div>
+            <div class="mb-3"><label>Projectile Speed</label><input class="form-control" type="number" step="0.01" id="mProjSpeed" /></div>
+            <div class="mb-3"><label>Effect Type</label>
+                <select class="form-select" id="mEffectType">
+                    <option value="">-</option>
+                    @foreach (var et in Model.EffectTypes) { <option value="@et">@et</option> }
+                </select>
+            </div>
+            <div class="mb-3"><label>Mana Consumption</label><input class="form-control" type="number" id="mMana" /></div>
+            <div class="mb-3"><label>Max Companions</label><input class="form-control" type="number" id="mCompanions" /></div>
+            <div class="modal-footer-btns">
+                <button type="button" class="btn btn-success" onclick="confirmMagic()">Añadir</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addMagicModal').style.display='none'">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -445,10 +308,17 @@
                     </form>
                 </div>
 
-                <!-- 4 cards -->
-                <form id="form-@item.Id" method="post" asp-page-handler="EditItem" enctype="multipart/form-data">
-                <input type="hidden" name="EditItem.Id" value="@item.Id" />
+                <!-- cards -->
+                <form id="form-@item.Id" method="post" asp-page-handler="SaveItem" enctype="multipart/form-data">
+                <input type="hidden" name="EditItemId" value="@item.Id" />
                 <input type="hidden" name="FilteredItemId" value="@Model.FilteredItemId" />
+                <input type="hidden" name="PendingStatsJson" id="pendingStats-@item.Id" value="[]" />
+                <input type="hidden" name="DeletedStatsJson" id="deletedStats-@item.Id" value="[]" />
+                <input type="hidden" name="PendingEventsJson" id="pendingEvents-@item.Id" value="[]" />
+                <input type="hidden" name="DeletedEventsJson" id="deletedEvents-@item.Id" value="[]" />
+                <input type="hidden" name="PendingWeaponJson" id="pendingWeapon-@item.Id" value="" />
+                <input type="hidden" name="PendingMagicJson" id="pendingMagic-@item.Id" value="[]" />
+                <input type="hidden" name="DeletedMagicJson" id="deletedMagic-@item.Id" value="[]" />
                 <div class="item-cards-row">
 
                     <div class="icard">
@@ -505,7 +375,12 @@
                                     @foreach (var r in Model.Rarities) { <option value="@r" selected="@(item.ItemRarity == r ? "selected" : null)">@r</option> }
                                 </select>
                             </span></div>
-                            <div class="ifield"><span class="ilabel">Item Sound</span><span class="ivalue">@(item.SoundType?.Sound ?? "-")</span></div>
+                            <div class="ifield"><span class="ilabel">Item Sound</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.ItemSoundType" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var s in Model.InventorySounds) { <option value="@s.Id" selected="@(item.ItemSoundType == s.Id ? "selected" : null)">@s.Sound</option> }
+                                </select>
+                            </span></div>
                             <div class="ifield" id="field-holdtype-@item.Id" style="display:@(new[]{ "sword","bow","book","shield" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")"><span class="ilabel">Hold Type</span><span class="ivalue">
                                 <select class="form-select form-select-sm" name="EditItem.HoldType" disabled>
                                     <option value="">-</option>
@@ -532,29 +407,27 @@
                     <div class="icard">
                         <div class="icard-header">📊 Stats & Events</div>
                         <div class="icard-body">
+                            <div id="stats-list-@item.Id">
                             @foreach (var sa in Model.StatsByItem[item.Id])
                             {
-                                <div class="ifield">
+                                <div class="ifield" data-stat-id="@sa.Id">
                                     <span class="ilabel">@(sa.StatNavigation?.Id ?? sa.Stat)</span>
                                     <span class="ivalue d-flex align-items-center gap-2">
                                         @(sa.Amount?.ToString() ?? "-")
-                                        <form method="post" asp-page-handler="DeleteStat" style="display:inline;margin:0">
-                                            <input type="hidden" name="id" value="@sa.Id" />
-                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
-                                        </form>
+                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 edit-only" onclick="deleteStat('@item.Id', @sa.Id, this.closest('.ifield'))">✕</button>
                                     </span>
                                 </div>
                             }
-                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                            </div>
+                            <div class="ifield edit-only" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
                                 <span class="ilabel" style="color:var(--text-muted)">+ Stat</span>
-                                <span class="ivalue">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAddStat('@item.Id')">+</button>
-                                </span>
+                                <span class="ivalue"><button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAddStat('@item.Id')">+</button></span>
                             </div>
                             <div style="border-top:1px solid var(--border-subtle);margin-top:0.5rem;padding-top:0.5rem">
+                                <div id="events-list-@item.Id">
                                 @foreach (var ie in Model.ItemEventsByItem[item.Id])
                                 {
-                                    <div class="ifield">
+                                    <div class="ifield" data-event-id="@ie.Id">
                                         <span class="ilabel">Event</span>
                                         <span class="ivalue d-flex align-items-center gap-2">
                                             @if (ie.EventType?.Icon != null)
@@ -562,36 +435,32 @@
                                                 <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(ie.EventType.Icon)" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated" />
                                             }
                                             <span class="badge bg-secondary">@(ie.EventType?.Id ?? ie.EventTypeId ?? "#" + ie.Id)</span>
-                                            <form method="post" asp-page-handler="DeleteItemEvent" style="display:inline;margin:0">
-                                                <input type="hidden" name="id" value="@ie.Id" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
-                                            </form>
+                                            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 edit-only" onclick="deleteEvent('@item.Id', @ie.Id, this.closest('.ifield'))">✕</button>
                                         </span>
                                     </div>
                                 }
-                                <div class="ifield" style="padding-top:0.5rem">
+                                </div>
+                                <div class="ifield edit-only" style="padding-top:0.5rem">
                                     <span class="ilabel" style="color:var(--text-muted)">+ Event</span>
-                                    <span class="ivalue">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAddItemEvent('@item.Id')">+</button>
-                                    </span>
+                                    <span class="ivalue"><button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAddEvent('@item.Id')">+</button></span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="icard">
+                    <div class="icard" id="card-weapon-@item.Id" style="display:@(new[]{ "sword","bow","weapon" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")">
                         <div class="icard-header">⚔️ Weapon Info</div>
                         <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Weapon Data</span><span class="ivalue d-flex align-items-center gap-2">@(item.Weapon != null ? $"DMG {item.Weapon.Damage} | Heavy {item.Weapon.Heaviness} | CD {item.Weapon.Cooldown}" : "-")
-                                @if (item.Weapon != null)
-                                {
-                                    <button type="button" class="btn btn-outline-info btn-xs" onclick="openEditWeaponModal(@item.Weapon.Id, '@item.Id', @(item.Weapon.Damage?.ToString() ?? "null"), @(item.Weapon.Heaviness?.ToString() ?? "null"), '@(item.Weapon.Ammo ?? "")', @(item.Weapon.Cooldown?.ToString() ?? "null"))">✏️</button>
-                                }
-                                else
-                                {
-                                    <button type="button" class="btn btn-outline-success btn-xs" onclick="openAddWeaponModal('@item.Id')">+ Añadir</button>
-                                }
-                            </span></div>
+                            <div class="ifield"><span class="ilabel">Damage</span><span class="ivalue"><input class="form-control form-control-sm" type="number" id="wInline-damage-@item.Id" value="@item.Weapon?.Damage" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Heaviness</span><span class="ivalue"><input class="form-control form-control-sm" type="number" min="1" max="5" id="wInline-heaviness-@item.Id" value="@item.Weapon?.Heaviness" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Cooldown</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-cooldown-@item.Id" value="@item.Weapon?.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Ammo</span><span class="ivalue"><input class="form-control form-control-sm" id="wInline-ammo-@item.Id" value="@item.Weapon?.Ammo" list="ammoItemList" autocomplete="off" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                        </div>
+                    </div>
+
+                    <div class="icard" id="card-block-@item.Id" style="display:@(new[]{ "sword","shield" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")">
+                        <div class="icard-header">🛡️ Block Settings</div>
+                        <div class="icard-body">
                             <div class="ifield"><span class="ilabel">Can Block</span><span class="ivalue">
                                 <select class="form-select form-select-sm" name="EditItem.CanBlock" onchange="onCanBlockChange(this, '@item.Id')" disabled>
                                     <option value="">-</option>
@@ -617,77 +486,32 @@
                         </div>
                     </div>
 
-                    <div class="icard">
-                        <div class="icard-header">🔊 Inventory Sound</div>
-                        <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Sound Type</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.ItemSoundType" disabled>
-                                    <option value="">-</option>
-                                    @foreach (var s in Model.InventorySounds) { <option value="@s.Id" selected="@(item.ItemSoundType == s.Id ? "selected" : null)">@s.Sound</option> }
-                                </select>
-                            </span></div>
-                        </div>
-                    </div>
-
-                    <div class="icard">
+                    <div class="icard" id="card-magic-@item.Id" style="display:@(item.ItemType?.ToLower() == "book" ? "" : "none")">
                         <div class="icard-header">✨ Magic Data</div>
                         <div class="icard-body">
+                            <div id="magic-list-@item.Id">
                             @foreach (var ma in Model.MagicAttacksByItem[item.Id])
                             {
-                                var sounds = ma.HitSoundsNavigation?.Sounds;
-                                var soundIds = string.IsNullOrEmpty(sounds)
-                                    ? new List<long>()
-                                    : System.Text.Json.JsonSerializer.Deserialize<List<long>>(sounds) ?? new List<long>();
-                                <div class="magic-attack-row">
+                                <div class="magic-attack-row" data-magic-id="@ma.Id">
                                     <span class="badge bg-secondary">@(ma.MagicTypeNavigation?.Id ?? ma.MagicType)</span>
                                     <span>DMG: @(ma.MagicDamage?.ToString() ?? "-")</span>
                                     <span>CD: @(ma.Cooldown?.ToString("0.##") ?? "-")</span>
                                     <span>Mana: @(ma.ManaConsumption?.ToString() ?? "-")</span>
-                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="openEditMagicModal(@ma.Id, '@item.Id', '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString("0.##") ?? "null"), @(ma.ProjectileSpeed?.ToString("0.##") ?? "null"), '@(ma.EffectType ?? "")', @(ma.HitSounds?.ToString() ?? "null"), @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"))">✏️</button>
-                                    <form method="post" asp-page-handler="DeleteMagicAttack" style="display:inline">
-                                        <input type="hidden" name="id" value="@ma.Id" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
-                                    </form>
-                                </div>
-                                if (soundIds.Any())
-                                {
-                                    <div class="hit-sounds-row">
-                                        <span class="ilabel">Hit Sounds</span>
-                                        @foreach (var sid in soundIds)
-                                        {
-                                            <span class="badge bg-dark border border-secondary me-1">
-                                                🔊 #@sid
-                                                <form method="post" asp-page-handler="RemoveHitSound" style="display:inline">
-                                                    <input type="hidden" name="magicAttackId" value="@ma.Id" />
-                                                    <input type="hidden" name="audioId" value="@sid" />
-                                                    <button type="submit" class="btn-close btn-close-white" style="font-size:0.5rem"></button>
-                                                </form>
-                                            </span>
-                                        }
-                                    </div>
-                                }
-                                <div class="hit-sounds-upload-row">
-                                    <form method="post" asp-page-handler="AddHitSound" enctype="multipart/form-data" style="display:flex;gap:0.4rem;align-items:center">
-                                        <input type="hidden" name="magicAttackId" value="@ma.Id" />
-                                        <input type="file" class="form-control form-control-sm" name="file" accept="audio/*" style="max-width:180px" />
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">+ Hit Sound</button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-info btn-sm edit-only" onclick="openEditMagic('@item.Id', @ma.Id, '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(ma.ProjectileSpeed?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), '@(ma.EffectType ?? "")', @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"))">✏️</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm edit-only" onclick="deleteMagic('@item.Id', @ma.Id, this.closest('.magic-attack-row'))">🗑️</button>
                                 </div>
                             }
-                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                            </div>
+                            <div class="ifield edit-only" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
                                 <span class="ilabel" style="color:var(--text-muted)">+ Attack</span>
-                                <span class="ivalue"><button type="button" class="btn btn-outline-success btn-sm" onclick="openAddMagicModal('@item.Id')">+</button></span>
+                                <span class="ivalue"><button type="button" class="btn btn-outline-success btn-sm" onclick="openAddMagic('@item.Id')">+</button></span>
                             </div>
                         </div>
                     </div>
 
                 </div>
                 </form>
-                <!-- Icon upload (fuera del form de edición para evitar forms anidados) -->
-                <form class="upload-form d-none" id="upload-form-@item.Id" method="post" enctype="multipart/form-data" asp-page-handler="Upload">
-                    <input type="hidden" name="itemId" value="@item.Id" />
-                    <input type="hidden" name="FilteredItemId" value="@Model.FilteredItemId" />
-                </form>
+
             </div>
         }
     </div>
@@ -726,6 +550,168 @@
     const EQUIP_SLOT_TYPES = ['sword','bow','book','armor','shield','weapon','accesory'];
     const HOLD_TYPES = ['sword','bow','book','shield'];
 
+    // ── Pending state per item ──────────────────────────────────────────────
+    const pending = {};
+    function getState(itemId) {
+        if (!pending[itemId]) pending[itemId] = { stats: [], deletedStats: [], events: [], deletedEvents: [], weapon: null, magic: [], deletedMagic: [] };
+        return pending[itemId];
+    }
+
+    // ── Stats ───────────────────────────────────────────────────────────────
+    let _addStatItemId = null;
+    function openAddStat(itemId) {
+        _addStatItemId = itemId;
+        document.getElementById('pendingStatSelect').value = '';
+        document.getElementById('pendingStatAmount').value = '';
+        document.getElementById('addStatModal').style.display = 'flex';
+    }
+    function confirmAddStat() {
+        const stat = document.getElementById('pendingStatSelect').value;
+        const amount = parseInt(document.getElementById('pendingStatAmount').value);
+        if (!stat) return;
+        const s = getState(_addStatItemId);
+        const entry = { _tempId: Date.now(), stat, amount: isNaN(amount) ? null : amount };
+        s.stats.push(entry);
+        syncHidden(_addStatItemId);
+        // render
+        const row = document.createElement('div');
+        row.className = 'ifield'; row.dataset.tempId = entry._tempId;
+        row.innerHTML = `<span class="ilabel">${stat}</span><span class="ivalue d-flex align-items-center gap-2">${amount ?? '-'}<button type="button" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deletePendingStat('${_addStatItemId}', ${entry._tempId}, this.closest('.ifield'))">✕</button></span>`;
+        document.getElementById('stats-list-' + _addStatItemId).appendChild(row);
+        document.getElementById('addStatModal').style.display = 'none';
+    }
+    function deleteStat(itemId, id, el) {
+        getState(itemId).deletedStats.push(id);
+        syncHidden(itemId);
+        el.remove();
+    }
+    function deletePendingStat(itemId, tempId, el) {
+        const s = getState(itemId);
+        s.stats = s.stats.filter(x => x._tempId !== tempId);
+        syncHidden(itemId);
+        el.remove();
+    }
+
+    // ── Events ──────────────────────────────────────────────────────────────
+    let _addEventItemId = null;
+    function openAddEvent(itemId) {
+        _addEventItemId = itemId;
+        document.getElementById('pendingEventTypeSelect').value = '';
+        document.getElementById('addItemEventModal').style.display = 'flex';
+    }
+    function confirmAddEvent() {
+        const sel = document.getElementById('pendingEventTypeSelect');
+        const eventTypeId = sel.value;
+        if (!eventTypeId) return;
+        const opt = sel.options[sel.selectedIndex];
+        const icon = opt.dataset.icon;
+        const s = getState(_addEventItemId);
+        const entry = { _tempId: Date.now(), eventTypeId };
+        s.events.push(entry);
+        syncHidden(_addEventItemId);
+        const row = document.createElement('div');
+        row.className = 'ifield'; row.dataset.tempId = entry._tempId;
+        row.innerHTML = `<span class="ilabel">Event</span><span class="ivalue d-flex align-items-center gap-2">${icon ? `<img src="data:image/png;base64,${icon}" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated"/>` : ''}<span class="badge bg-secondary">${eventTypeId}</span><button type="button" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deletePendingEvent('${_addEventItemId}', ${entry._tempId}, this.closest('.ifield'))">✕</button></span>`;
+        document.getElementById('events-list-' + _addEventItemId).appendChild(row);
+        document.getElementById('addItemEventModal').style.display = 'none';
+    }
+    function deleteEvent(itemId, id, el) {
+        getState(itemId).deletedEvents.push(id);
+        syncHidden(itemId);
+        el.remove();
+    }
+    function deletePendingEvent(itemId, tempId, el) {
+        const s = getState(itemId);
+        s.events = s.events.filter(x => x._tempId !== tempId);
+        syncHidden(itemId);
+        el.remove();
+    }
+
+    // ── Weapon ──────────────────────────────────────────────────────────────
+    function syncWeapon(itemId) {
+        const damage = parseInt(document.getElementById('wInline-damage-' + itemId).value) || null;
+        const heaviness = parseInt(document.getElementById('wInline-heaviness-' + itemId).value) || null;
+        const cooldown = parseFloat(document.getElementById('wInline-cooldown-' + itemId).value) || null;
+        const ammo = document.getElementById('wInline-ammo-' + itemId).value || null;
+        getState(itemId).weapon = (damage || heaviness || cooldown || ammo) ? { damage, heaviness, ammo, cooldown } : null;
+        syncHidden(itemId);
+    }
+
+    // ── Magic ───────────────────────────────────────────────────────────────
+    let _magicItemId = null;
+    function openAddMagic(itemId) {
+        _magicItemId = itemId;
+        document.getElementById('magicModalEditId').value = '0';
+        ['mMagicType','mDamage','mCooldown','mProjSpeed','mEffectType','mMana','mCompanions'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('addMagicModal').style.display = 'flex';
+    }
+    function openEditMagic(itemId, id, magicType, damage, cooldown, projSpeed, effectType, mana, companions) {
+        _magicItemId = itemId;
+        document.getElementById('magicModalEditId').value = id;
+        document.getElementById('mMagicType').value = magicType ?? '';
+        document.getElementById('mDamage').value = damage ?? '';
+        document.getElementById('mCooldown').value = cooldown ?? '';
+        document.getElementById('mProjSpeed').value = projSpeed ?? '';
+        document.getElementById('mEffectType').value = effectType ?? '';
+        document.getElementById('mMana').value = mana ?? '';
+        document.getElementById('mCompanions').value = companions ?? '';
+        document.getElementById('addMagicModal').style.display = 'flex';
+    }
+    function confirmMagic() {
+        const editId = parseInt(document.getElementById('magicModalEditId').value) || 0;
+        const entry = {
+            id: editId,
+            _tempId: editId || Date.now(),
+            magicType: document.getElementById('mMagicType').value,
+            magicDamage: parseInt(document.getElementById('mDamage').value) || null,
+            cooldown: parseFloat(document.getElementById('mCooldown').value) || null,
+            projectileSpeed: parseFloat(document.getElementById('mProjSpeed').value) || null,
+            effectType: document.getElementById('mEffectType').value || null,
+            manaConsumption: parseInt(document.getElementById('mMana').value) || null,
+            maxCompanions: parseInt(document.getElementById('mCompanions').value) || null,
+        };
+        const s = getState(_magicItemId);
+        if (editId > 0) {
+            // update existing in list
+            s.magic = s.magic.filter(x => x.id !== editId);
+            const row = document.querySelector(`#magic-list-${_magicItemId} [data-magic-id="${editId}"]`);
+            if (row) row.querySelector('.badge').textContent = entry.magicType;
+        } else {
+            // new row
+            const row = document.createElement('div');
+            row.className = 'magic-attack-row'; row.dataset.tempId = entry._tempId;
+            row.innerHTML = `<span class="badge bg-secondary">${entry.magicType}</span><span>DMG: ${entry.magicDamage ?? '-'}</span><span>CD: ${entry.cooldown ?? '-'}</span><span>Mana: ${entry.manaConsumption ?? '-'}</span><button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePendingMagic('${_magicItemId}', ${entry._tempId}, this.closest('.magic-attack-row'))">🗑️</button>`;
+            document.getElementById('magic-list-' + _magicItemId).appendChild(row);
+        }
+        s.magic.push(entry);
+        syncHidden(_magicItemId);
+        document.getElementById('addMagicModal').style.display = 'none';
+    }
+    function deleteMagic(itemId, id, el) {
+        getState(itemId).deletedMagic.push(id);
+        syncHidden(itemId);
+        el.remove();
+    }
+    function deletePendingMagic(itemId, tempId, el) {
+        const s = getState(itemId);
+        s.magic = s.magic.filter(x => x._tempId !== tempId);
+        syncHidden(itemId);
+        el.remove();
+    }
+
+    // ── Sync hidden inputs ──────────────────────────────────────────────────
+    function syncHidden(itemId) {
+        const s = getState(itemId);
+        document.getElementById('pendingStats-' + itemId).value = JSON.stringify(s.stats.map(({stat, amount}) => ({stat, amount})));
+        document.getElementById('deletedStats-' + itemId).value = JSON.stringify(s.deletedStats);
+        document.getElementById('pendingEvents-' + itemId).value = JSON.stringify(s.events.map(({eventTypeId}) => ({eventTypeId})));
+        document.getElementById('deletedEvents-' + itemId).value = JSON.stringify(s.deletedEvents);
+        document.getElementById('pendingWeapon-' + itemId).value = s.weapon ? JSON.stringify(s.weapon) : '';
+        document.getElementById('pendingMagic-' + itemId).value = JSON.stringify(s.magic.map(({id, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions}) => ({id: id||0, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions})));
+        document.getElementById('deletedMagic-' + itemId).value = JSON.stringify(s.deletedMagic);
+    }
+
+    // ── Filters ─────────────────────────────────────────────────────────────
     function applyFilters() {
         const q = document.getElementById('itemSearch').value.toLowerCase();
         const type = document.getElementById('f-type').value;
@@ -749,149 +735,88 @@
             c.style.display = match ? '' : 'none';
         });
     }
-
-    function toggleFilters() {
-        const p = document.getElementById('filterPanel');
-        p.style.display = p.style.display === 'none' ? '' : 'none';
-    }
-
+    function toggleFilters() { const p = document.getElementById('filterPanel'); p.style.display = p.style.display === 'none' ? '' : 'none'; }
     function clearFilters() {
         document.getElementById('itemSearch').value = '';
         ['f-type','f-rarity','f-slot','f-hold','f-stack','f-block','f-weapon'].forEach(id => document.getElementById(id).value = '');
         applyFilters();
     }
 
+    // ── Visibility ──────────────────────────────────────────────────────────
     function onNewItemTypeChange(select) {
         const val = select.value.toLowerCase();
         document.getElementById('new-field-equipslot').style.display = EQUIP_SLOT_TYPES.includes(val) ? '' : 'none';
         document.getElementById('new-field-holdtype').style.display = HOLD_TYPES.includes(val) ? '' : 'none';
     }
-
     function onNewCanBlockChange(select) {
         const show = select.value === 'true';
-        document.getElementById('new-field-blockamount').style.display = show ? '' : 'none';
-        document.getElementById('new-field-blocksound').style.display = show ? '' : 'none';
-        document.getElementById('new-field-parryaudio').style.display = show ? '' : 'none';
+        ['new-field-blockamount','new-field-blocksound','new-field-parryaudio'].forEach(id => document.getElementById(id).style.display = show ? '' : 'none');
     }
-
     function onItemTypeChange(select, itemId) {
         const val = select.value.toLowerCase();
         document.getElementById('field-equipslot-' + itemId).style.display = EQUIP_SLOT_TYPES.includes(val) ? '' : 'none';
         document.getElementById('field-holdtype-' + itemId).style.display = HOLD_TYPES.includes(val) ? '' : 'none';
+        document.getElementById('card-weapon-' + itemId).style.display = WEAPON_TYPES.includes(val) ? '' : 'none';
+        document.getElementById('card-block-' + itemId).style.display = BLOCK_TYPES.includes(val) ? '' : 'none';
+        document.getElementById('card-magic-' + itemId).style.display = val === 'book' ? '' : 'none';
     }
-
     function onCanBlockChange(select, itemId) {
         const show = select.value === 'true';
-        document.getElementById('field-blockamount-' + itemId).style.display = show ? '' : 'none';
-        document.getElementById('field-blocksound-' + itemId).style.display = show ? '' : 'none';
-        document.getElementById('field-parryaudio-' + itemId).style.display = show ? '' : 'none';
+        ['field-blockamount-','field-blocksound-','field-parryaudio-'].forEach(p => document.getElementById(p + itemId).style.display = show ? '' : 'none');
     }
-
+    const WEAPON_TYPES = ['sword','bow','weapon'];
+    const BLOCK_TYPES = ['sword','shield'];
     function applyVisibility(itemId) {
         const form = document.getElementById('form-' + itemId);
         const itemType = form.querySelector('[name="EditItem.ItemType"]').value.toLowerCase();
         const canBlock = form.querySelector('[name="EditItem.CanBlock"]').value;
         document.getElementById('field-equipslot-' + itemId).style.display = EQUIP_SLOT_TYPES.includes(itemType) ? '' : 'none';
         document.getElementById('field-holdtype-' + itemId).style.display = HOLD_TYPES.includes(itemType) ? '' : 'none';
-        document.getElementById('field-blockamount-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
-        document.getElementById('field-blocksound-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
-        document.getElementById('field-parryaudio-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
+        document.getElementById('card-weapon-' + itemId).style.display = WEAPON_TYPES.includes(itemType) ? '' : 'none';
+        document.getElementById('card-block-' + itemId).style.display = BLOCK_TYPES.includes(itemType) ? '' : 'none';
+        document.getElementById('card-magic-' + itemId).style.display = itemType === 'book' ? '' : 'none';
+        ['field-blockamount-','field-blocksound-','field-parryaudio-'].forEach(p => document.getElementById(p + itemId).style.display = canBlock === 'true' ? '' : 'none');
     }
 
+    // ── Edit mode ───────────────────────────────────────────────────────────
     function enableEdit(itemId) {
+        const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
         const form = document.getElementById('form-' + itemId);
         form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = false);
+        entry.classList.add('editing');
         applyVisibility(itemId);
         document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = 'none';
         document.getElementById('btn-save-' + itemId).style.display = '';
         document.getElementById('btn-cancel-' + itemId).style.display = '';
         document.getElementById('icon-btn-' + itemId).style.display = '';
     }
-
     function cancelEdit(itemId) {
+        const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
         const form = document.getElementById('form-' + itemId);
         form.reset();
         form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = true);
+        entry.classList.remove('editing');
+        delete pending[itemId];
         applyVisibility(itemId);
         document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = '';
         document.getElementById('btn-save-' + itemId).style.display = 'none';
         document.getElementById('btn-cancel-' + itemId).style.display = 'none';
         document.getElementById('icon-btn-' + itemId).style.display = 'none';
         document.getElementById('icon-input-' + itemId).value = '';
+        location.reload();
     }
-
     function onInlineStackableChange(select, itemId) {
         const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
-        if (select.value === 'false') {
-            maxAmount.value = 1;
-            maxAmount.readOnly = true;
-            maxAmount.style.backgroundColor = '#2a2d3e';
-        } else {
-            maxAmount.readOnly = false;
-            maxAmount.style.backgroundColor = '';
-        }
+        if (select.value === 'false') { maxAmount.value = 1; maxAmount.readOnly = true; maxAmount.style.backgroundColor = '#2a2d3e'; }
+        else { maxAmount.readOnly = false; maxAmount.style.backgroundColor = ''; }
     }
-
     function onStackableChange(select) {
         const maxAmount = document.getElementById('maxAmount');
-        if (select.value === 'false') {
-            maxAmount.value = 1;
-            maxAmount.readOnly = true;
-            maxAmount.style.backgroundColor = '#2a2d3e';
-        } else {
-            maxAmount.readOnly = false;
-            maxAmount.style.backgroundColor = '';
-        }
+        if (select.value === 'false') { maxAmount.value = 1; maxAmount.readOnly = true; maxAmount.style.backgroundColor = '#2a2d3e'; }
+        else { maxAmount.readOnly = false; maxAmount.style.backgroundColor = ''; }
     }
 
-    function toggleAddItemEvent(itemId) {
-        document.getElementById('addItemEventItemId').value = itemId;
-        document.getElementById('addItemEventModal').style.display = 'flex';
-    }
-
-    function toggleAddStat(itemId) {
-        document.getElementById('addStatItemId').value = itemId;
-        document.getElementById('addStatModal').style.display = 'flex';
-    }
-
-    function openAddMagicModal(itemId) {
-        document.getElementById('addMagicItemId').value = itemId;
-        document.getElementById('addMagicModal').style.display = 'flex';
-    }
-
-    function openEditMagicModal(id, itemId, magicType, damage, cooldown, projSpeed, effectType, hitSounds, mana, companions) {
-        document.getElementById('editMagicId').value = id;
-        document.getElementById('editMagicItemId').value = itemId;
-        document.getElementById('editMagicType').value = magicType ?? '';
-        document.getElementById('editMagicDamage').value = damage ?? '';
-        document.getElementById('editMagicCooldown').value = cooldown ?? '';
-        document.getElementById('editMagicProjectileSpeed').value = projSpeed ?? '';
-        document.getElementById('editMagicEffectType').value = effectType ?? '';
-        document.getElementById('editMagicMana').value = mana ?? '';
-        document.getElementById('editMagicCompanions').value = companions ?? '';
-        document.getElementById('editMagicModal').style.display = 'flex';
-    }
-
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el));
-
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[id^="form-"]').forEach(form => {
-            const itemId = form.id.replace('form-', '');
-            applyVisibility(itemId);
-        });
-        // Inject FilteredItemId into all forms that don't already have it
-        const filteredItemId = '@Model.FilteredItemId';
-        document.querySelectorAll('form').forEach(form => {
-            if (!form.querySelector('[name="FilteredItemId"]')) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'FilteredItemId';
-                input.value = filteredItemId;
-                form.appendChild(input);
-            }
-        });
-    });
-
+    // ── Inline forms (lookup adds) ──────────────────────────────────────────
     function toggleInline(id, anchorEl) {
         const form = document.getElementById(id);
         const isHidden = form.style.display === 'none' || form.style.display === '';
@@ -905,25 +830,18 @@
         }
     }
 
-    function toggleWeaponRow(id) {
-        const row = document.getElementById(id);
-        row.style.display = row.style.display === 'none' ? 'flex' : 'none';
-    }
-
-    function openAddWeaponModal(itemId) {
-        document.getElementById('addWeaponItemId').value = itemId;
-        document.getElementById('addWeaponModal').style.display = 'flex';
-    }
-
-    function openEditWeaponModal(id, itemId, damage, heaviness, ammo, cooldown) {
-        document.getElementById('editWeaponId').value = id;
-        document.getElementById('editWeaponItemId').value = itemId;
-        document.getElementById('editWeaponIdDisplay').value = id;
-        document.getElementById('editWeaponItemIdDisplay').value = itemId;
-        document.getElementById('editWeaponDamage').value = damage ?? '';
-        document.getElementById('editWeaponHeaviness').value = heaviness ?? '';
-        document.getElementById('editWeaponAmmo').value = ammo ?? '';
-        document.getElementById('editWeaponCooldown').value = cooldown ?? '';
-        document.getElementById('editWeaponModal').style.display = 'flex';
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[id^="form-"]').forEach(form => {
+            const itemId = form.id.replace('form-', '');
+            applyVisibility(itemId);
+        });
+        const filteredItemId = '@Model.FilteredItemId';
+        document.querySelectorAll('form').forEach(form => {
+            if (!form.querySelector('[name="FilteredItemId"]')) {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = 'FilteredItemId'; input.value = filteredItemId;
+                form.appendChild(input);
+            }
+        });
+    });
 </script>

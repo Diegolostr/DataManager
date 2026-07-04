@@ -8,7 +8,7 @@ using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weaponDataRepository, MagicAttackRepository magicAttackRepository, SoundsArrayRepository soundsArrayRepository, AppDbContext db) : PageModel
+public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository magicAttackRepository, AppDbContext db) : PageModel
 {
     public IEnumerable<Item> Items { get; set; } = [];
     public IEnumerable<string> Rarities { get; set; } = [];
@@ -29,24 +29,26 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         FilteredItemId is not null ? RedirectToPage(new { itemId = FilteredItemId }) : RedirectToPage();
 
     [BindProperty] public Item NewItem { get; set; } = new();
-    [BindProperty] public Item EditItem { get; set; } = new();
-    [BindProperty] public WeaponData EditWeapon { get; set; } = new();
-    [BindProperty] public WeaponData NewWeapon { get; set; } = new();
     [BindProperty] public IFormFile? NewBlockSound { get; set; }
     [BindProperty] public IFormFile? NewParryAudio { get; set; }
     [BindProperty] public IFormFile? EditBlockSound { get; set; }
     [BindProperty] public IFormFile? EditParryAudio { get; set; }
     [BindProperty] public IFormFile? EditIcon { get; set; }
-
-    [BindProperty] public MagicAttack NewMagicAttack { get; set; } = new();
-    [BindProperty] public StatsAmount NewStat { get; set; } = new();
-
     [BindProperty] public string NewItemTypeValue { get; set; } = string.Empty;
     [BindProperty] public string NewRarityValue { get; set; } = string.Empty;
     [BindProperty] public string NewHoldTypeValue { get; set; } = string.Empty;
     [BindProperty] public string NewEventTypeValue { get; set; } = string.Empty;
     [BindProperty] public IFormFile? NewEventTypeIcon { get; set; }
-    [BindProperty] public ItemEvent NewItemEvent { get; set; } = new();
+
+    // Pending state submitted as JSON on save
+    [BindProperty] public string? PendingStatsJson { get; set; }
+    [BindProperty] public string? PendingEventsJson { get; set; }
+    [BindProperty] public string? PendingWeaponJson { get; set; }
+    [BindProperty] public string? PendingMagicJson { get; set; }
+    [BindProperty] public string? DeletedStatsJson { get; set; }
+    [BindProperty] public string? DeletedEventsJson { get; set; }
+    [BindProperty] public string? DeletedMagicJson { get; set; }
+    [BindProperty] public string? EditItemId { get; set; }
 
     public async Task OnGetAsync(string? itemId)
     {
@@ -60,17 +62,6 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         StatsByItem = allStats.ToLookup(s => s.Item ?? "");
         var allItemEvents = await db.ItemEvent.Include(e => e.EventType).ToListAsync();
         ItemEventsByItem = allItemEvents.ToLookup(e => e.ItemId);
-    }
-
-    public async Task<IActionResult> OnPostUploadAsync(string itemId, IFormFile file)
-    {
-        if (file is { Length: > 0 })
-        {
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
-            await itemRepository.PostImageAsync(itemId, ms.ToArray());
-        }
-        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostAddItemAsync()
@@ -88,134 +79,107 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostEditItemAsync()
+    public async Task<IActionResult> OnPostSaveItemAsync()
     {
         ModelState.Clear();
+        if (string.IsNullOrEmpty(EditItemId)) return RedirectBack();
+
+        var itemId = EditItemId;
+
+        // 1. Update item fields
+        var editItem = await db.Items.AsNoTracking().FirstOrDefaultAsync(i => i.Id == itemId);
+        if (editItem is null) return RedirectBack();
+
+        await TryBindItemFromForm(editItem);
         var blockSound = await ReadFileAsync(EditBlockSound);
         var parryAudio = await ReadFileAsync(EditParryAudio);
-        await itemRepository.UpdateItemAsync(EditItem, blockSound, parryAudio, EditBlockSound?.FileName, EditParryAudio?.FileName);
+        await itemRepository.UpdateItemAsync(editItem, blockSound, parryAudio, EditBlockSound?.FileName, EditParryAudio?.FileName);
         var iconBytes = await ReadFileAsync(EditIcon);
-        if (iconBytes is { Length: > 0 })
-            await itemRepository.PostImageAsync(EditItem.Id, iconBytes);
-        return RedirectBack();
-    }
+        if (iconBytes is { Length: > 0 }) await itemRepository.PostImageAsync(itemId, iconBytes);
 
-    public async Task<IActionResult> OnPostEditWeaponAsync()
-    {
-        ModelState.Clear();
-        await weaponDataRepository.UpdateAsync(EditWeapon);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostAddWeaponAsync()
-    {
-        ModelState.Clear();
-        await weaponDataRepository.AddAsync(NewWeapon);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostAddStatAsync()
-    {
-        ModelState.Clear();
-        db.StatsAmount.Add(NewStat);
-        await db.SaveChangesAsync();
-        await SyncItemStatsJsonAsync(NewStat.Item!);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostDeleteStatAsync(long id)
-    {
-        var entity = await db.StatsAmount.FindAsync(id);
-        if (entity is not null)
+        // 2. Deleted stats
+        var deletedStats = ParseLongList(DeletedStatsJson);
+        foreach (var sid in deletedStats)
         {
-            var itemId = entity.Item;
-            db.StatsAmount.Remove(entity);
+            var s = await db.StatsAmount.FindAsync(sid);
+            if (s is not null) db.StatsAmount.Remove(s);
+        }
+
+        // 3. New stats
+        var newStats = ParseJson<List<PendingStat>>(PendingStatsJson);
+        foreach (var ps in newStats)
+            db.StatsAmount.Add(new StatsAmount { Stat = ps.Stat, Item = itemId, Amount = ps.Amount });
+
+        await db.SaveChangesAsync();
+        await SyncItemStatsJsonAsync(itemId);
+
+        // 4. Deleted events
+        var deletedEvents = ParseLongList(DeletedEventsJson);
+        foreach (var eid in deletedEvents)
+        {
+            var e = await db.ItemEvent.FindAsync(eid);
+            if (e is not null) db.ItemEvent.Remove(e);
+        }
+
+        // 5. New events
+        var newEvents = ParseJson<List<PendingEvent>>(PendingEventsJson);
+        foreach (var pe in newEvents)
+            db.ItemEvent.Add(new ItemEvent { ItemId = itemId, EventTypeId = pe.EventTypeId });
+
+        await db.SaveChangesAsync();
+        await SyncItemEventsJsonAsync(itemId);
+
+        // 6. Weapon
+        var weaponData = string.IsNullOrWhiteSpace(PendingWeaponJson) ? null :
+            JsonSerializer.Deserialize<PendingWeapon>(PendingWeaponJson);
+        if (weaponData is not null)
+        {
+            var existing = await db.WeaponData.FirstOrDefaultAsync(w => w.ItemId == itemId);
+            if (existing is not null)
+            {
+                existing.Damage = weaponData.Damage;
+                existing.Heaviness = weaponData.Heaviness;
+                existing.Ammo = weaponData.Ammo;
+                existing.Cooldown = weaponData.Cooldown;
+            }
+            else
+            {
+                db.WeaponData.Add(new WeaponData { ItemId = itemId, Damage = weaponData.Damage, Heaviness = weaponData.Heaviness, Ammo = weaponData.Ammo, Cooldown = weaponData.Cooldown });
+            }
             await db.SaveChangesAsync();
-            if (itemId is not null) await SyncItemStatsJsonAsync(itemId);
         }
-        return RedirectBack();
-    }
 
-    private async Task SyncItemStatsJsonAsync(string itemId)
-    {
-        var item = await db.Items.FindAsync(itemId);
-        if (item is null) return;
-        var ids = await db.StatsAmount.Where(s => s.Item == itemId).Select(s => s.Id).ToListAsync();
-        item.ItemStats = JsonSerializer.Serialize(ids);
-        await db.SaveChangesAsync();
-    }
+        // 7. Deleted magic attacks
+        var deletedMagic = ParseLongList(DeletedMagicJson);
+        foreach (var mid in deletedMagic)
+            await magicAttackRepository.DeleteAsync(mid);
 
-    public async Task<IActionResult> OnPostAddHitSoundAsync(long magicAttackId, IFormFile file)
-    {
-        ModelState.Clear();
-        if (file is not { Length: > 0 }) return RedirectBack();
-
-        var attack = await magicAttackRepository.GetByIdAsync(magicAttackId);
-        if (attack is null) return RedirectBack();
-
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms);
-        var audio = new ItemAudio { Audio = ms.ToArray() };
-        db.ItemAudio.Add(audio);
-        await db.SaveChangesAsync();
-
-        SoundsArray soundsArray;
-        if (attack.HitSounds.HasValue)
+        // 8. New/edited magic attacks
+        var magicList = ParseJson<List<PendingMagic>>(PendingMagicJson);
+        foreach (var pm in magicList)
         {
-            soundsArray = (await soundsArrayRepository.GetByIdAsync(attack.HitSounds.Value))!;
-            var ids = JsonSerializer.Deserialize<List<long>>(soundsArray.Sounds ?? "[]") ?? [];
-            ids.Add(audio.Id);
-            soundsArray.Sounds = JsonSerializer.Serialize(ids);
-            await soundsArrayRepository.UpdateAsync(soundsArray);
+            if (pm.Id > 0)
+            {
+                var ma = await magicAttackRepository.GetByIdAsync(pm.Id);
+                if (ma is not null)
+                {
+                    ma.MagicType = pm.MagicType; ma.MagicDamage = pm.MagicDamage; ma.Cooldown = pm.Cooldown;
+                    ma.ProjectileSpeed = pm.ProjectileSpeed; ma.EffectType = pm.EffectType;
+                    ma.ManaConsumption = pm.ManaConsumption; ma.MaxCompanions = pm.MaxCompanions;
+                    await magicAttackRepository.UpdateAsync(ma);
+                }
+            }
+            else
+            {
+                await magicAttackRepository.AddAsync(new MagicAttack
+                {
+                    ItemId = itemId, MagicType = pm.MagicType, MagicDamage = pm.MagicDamage,
+                    Cooldown = pm.Cooldown, ProjectileSpeed = pm.ProjectileSpeed, EffectType = pm.EffectType,
+                    ManaConsumption = pm.ManaConsumption, MaxCompanions = pm.MaxCompanions
+                });
+            }
         }
-        else
-        {
-            soundsArray = new SoundsArray { ItemId = attack.ItemId ?? string.Empty, Sounds = JsonSerializer.Serialize(new[] { audio.Id }) };
-            await soundsArrayRepository.AddAsync(soundsArray);
-            attack.HitSounds = soundsArray.Id;
-            await magicAttackRepository.UpdateAsync(attack);
-        }
 
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostRemoveHitSoundAsync(long magicAttackId, long audioId)
-    {
-        var attack = await magicAttackRepository.GetByIdAsync(magicAttackId);
-        if (attack?.HitSounds is null) return RedirectBack();
-
-        var soundsArray = await soundsArrayRepository.GetByIdAsync(attack.HitSounds.Value);
-        if (soundsArray is null) return RedirectBack();
-
-        var ids = JsonSerializer.Deserialize<List<long>>(soundsArray.Sounds ?? "[]") ?? [];
-        ids.Remove(audioId);
-        soundsArray.Sounds = JsonSerializer.Serialize(ids);
-        await soundsArrayRepository.UpdateAsync(soundsArray);
-
-        var audioEntity = await db.ItemAudio.FindAsync(audioId);
-        if (audioEntity is not null) db.ItemAudio.Remove(audioEntity);
-        await db.SaveChangesAsync();
-
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostAddMagicAttackAsync()
-    {
-        ModelState.Clear();
-        await magicAttackRepository.AddAsync(NewMagicAttack);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostDeleteMagicAttackAsync(long id)
-    {
-        await magicAttackRepository.DeleteAsync(id);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostEditMagicAttackAsync()
-    {
-        ModelState.Clear();
-        await magicAttackRepository.UpdateAsync(NewMagicAttack);
         return RedirectBack();
     }
 
@@ -224,45 +188,10 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         if (!string.IsNullOrWhiteSpace(NewEventTypeValue))
         {
             var iconBytes = await ReadFileAsync(NewEventTypeIcon);
-            db.EventType.Add(new EventType
-            {
-                Id = NewEventTypeValue,
-                Icon = iconBytes
-            });
+            db.EventType.Add(new EventType { Id = NewEventTypeValue, Icon = iconBytes });
             await db.SaveChangesAsync();
         }
         return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostAddItemEventAsync()
-    {
-        ModelState.Clear();
-        db.ItemEvent.Add(NewItemEvent);
-        await db.SaveChangesAsync();
-        await SyncItemEventsJsonAsync(NewItemEvent.ItemId);
-        return RedirectBack();
-    }
-
-    public async Task<IActionResult> OnPostDeleteItemEventAsync(long id)
-    {
-        var entity = await db.ItemEvent.FindAsync(id);
-        if (entity is not null)
-        {
-            var itemId = entity.ItemId;
-            db.ItemEvent.Remove(entity);
-            await db.SaveChangesAsync();
-            await SyncItemEventsJsonAsync(itemId);
-        }
-        return RedirectBack();
-    }
-
-    private async Task SyncItemEventsJsonAsync(string itemId)
-    {
-        var item = await db.Items.FindAsync(itemId);
-        if (item is null) return;
-        var ids = await db.ItemEvent.Where(e => e.ItemId == itemId).Select(e => e.Id).ToListAsync();
-        item.ItemEvents = JsonSerializer.Serialize(ids);
-        await db.SaveChangesAsync();
     }
 
     public async Task<IActionResult> OnPostAddItemTypeAsync()
@@ -295,6 +224,44 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         return RedirectBack();
     }
 
+    private async Task TryBindItemFromForm(Item item)
+    {
+        item.Name = Request.Form["EditItem.Name"];
+        item.Description = Request.Form["EditItem.Description"]!;
+        item.ItemType = NullIfEmpty(Request.Form["EditItem.ItemType"]);
+        item.ItemRarity = NullIfEmpty(Request.Form["EditItem.ItemRarity"]);
+        item.EquipmentSlot = NullIfEmpty(Request.Form["EditItem.EquipmentSlot"]);
+        item.HoldType = NullIfEmpty(Request.Form["EditItem.HoldType"]);
+        item.ItemSoundType = long.TryParse(Request.Form["EditItem.ItemSoundType"], out var st) ? st : null;
+        item.IsStackable = bool.TryParse(Request.Form["EditItem.IsStackable"], out var isSt) ? isSt : null;
+        item.MaxAmount = int.TryParse(Request.Form["EditItem.MaxAmount"], out var ma) ? ma : null;
+        item.BuyAmount = int.TryParse(Request.Form["EditItem.BuyAmount"], out var ba) ? ba : null;
+        item.SellAmount = int.TryParse(Request.Form["EditItem.SellAmount"], out var sa) ? sa : null;
+        item.CanBlock = bool.TryParse(Request.Form["EditItem.CanBlock"], out var cb) ? cb : null;
+        item.BlockAmount = float.TryParse(Request.Form["EditItem.BlockAmount"], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var bla) ? bla : null;
+        await Task.CompletedTask;
+    }
+
+    private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+    private async Task SyncItemStatsJsonAsync(string itemId)
+    {
+        var item = await db.Items.FindAsync(itemId);
+        if (item is null) return;
+        var ids = await db.StatsAmount.Where(s => s.Item == itemId).Select(s => s.Id).ToListAsync();
+        item.ItemStats = JsonSerializer.Serialize(ids);
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SyncItemEventsJsonAsync(string itemId)
+    {
+        var item = await db.Items.FindAsync(itemId);
+        if (item is null) return;
+        var ids = await db.ItemEvent.Where(e => e.ItemId == itemId).Select(e => e.Id).ToListAsync();
+        item.ItemEvents = JsonSerializer.Serialize(ids);
+        await db.SaveChangesAsync();
+    }
+
     private async Task LoadLookupsAsync()
     {
         Rarities = await db.Rarity.Select(r => r.Id).ToListAsync();
@@ -315,4 +282,21 @@ public class ItemsModel(ItemRepository itemRepository, WeaponDataRepository weap
         await file.CopyToAsync(ms);
         return ms.ToArray();
     }
+
+    private static List<long> ParseLongList(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try { return JsonSerializer.Deserialize<List<long>>(json) ?? []; } catch { return []; }
+    }
+
+    private static T ParseJson<T>(string? json) where T : new()
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new T();
+        try { return JsonSerializer.Deserialize<T>(json) ?? new T(); } catch { return new T(); }
+    }
+
+    private record PendingStat(string Stat, int? Amount);
+    private record PendingEvent(string? EventTypeId);
+    private record PendingWeapon(long? Damage, int? Heaviness, string? Ammo, float? Cooldown);
+    private record PendingMagic(long Id, string MagicType, int? MagicDamage, float? Cooldown, float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
 }
