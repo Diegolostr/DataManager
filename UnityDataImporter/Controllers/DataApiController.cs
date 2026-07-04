@@ -32,7 +32,10 @@ public class DataApiController(AppDbContext db) : ControllerBase
         var itemEvents = await db.ItemEvent.Include(e => e.EventType).ToListAsync();
         var eventsByItem = itemEvents.GroupBy(e => e.ItemId).ToDictionary(g => g.Key, g => g.ToList());
 
-        return Ok(items.Select(i => MapItem(i, magicByItem.GetValueOrDefault(i.Id) ?? [], eventsByItem.GetValueOrDefault(i.Id) ?? [])));
+        var stats = await db.StatsAmount.ToListAsync();
+        var statsByItem = stats.GroupBy(s => s.Item).ToDictionary(g => g.Key!, g => g.ToList());
+
+        return Ok(items.Select(i => MapItem(i, magicByItem.GetValueOrDefault(i.Id) ?? [], eventsByItem.GetValueOrDefault(i.Id) ?? [], statsByItem.GetValueOrDefault(i.Id) ?? [])));
     }
 
     // GET /api/items/{id}
@@ -55,7 +58,8 @@ public class DataApiController(AppDbContext db) : ControllerBase
 
         var magicAttacks = await db.MagicAttacks.Where(m => m.ItemId == id).ToListAsync();
         var itemEvents = await db.ItemEvent.Include(e => e.EventType).Where(e => e.ItemId == id).ToListAsync();
-        return Ok(MapItem(item, magicAttacks, itemEvents));
+        var stats = await db.StatsAmount.Where(s => s.Item == id).ToListAsync();
+        return Ok(MapItem(item, magicAttacks, itemEvents, stats));
     }
 
     // GET /api/recipes
@@ -86,7 +90,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         return Ok(shops.Select(s => new NpcShopDto(s.Id, s.Recipes, s.LootTableId, s.LootTable?.LootTableName)));
     }
 
-    private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks, IEnumerable<Models.ItemEvent> itemEvents) => new(
+    private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks, IEnumerable<Models.ItemEvent> itemEvents, IEnumerable<Models.StatsAmount> stats) => new(
         i.Id,
         i.Name,
         i.Description,
@@ -99,7 +103,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         i.BlockAmount,
         i.ItemRarity,
         i.ItemType,
-        i.ItemStats,
+        stats.Select(s => new StatAmountDto(s.Id, s.Stat, s.Amount)),
         itemEvents.Select(e => new ItemEventDto(e.Id, e.EventTypeId, e.EventType?.EventName, e.EventType?.Icon is not null ? Convert.ToBase64String(e.EventType.Icon) : null)),
         i.EquipmentSlot,
         i.HoldType,

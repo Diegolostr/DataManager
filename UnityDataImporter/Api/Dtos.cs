@@ -6,6 +6,8 @@ public record ItemAudioDto(long Id, string Audio, string? Name, string? Prefix);
 
 public record ItemEventDto(long Id, string? EventTypeId, string? EventName, string? EventIcon);
 
+public record StatAmountDto(long Id, string Stat, int? Amount);
+
 public record MagicAttackDto(
     long Id, string MagicType, int? MagicDamage, float? Cooldown,
     float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
@@ -23,7 +25,7 @@ public record ItemDto(
     float? BlockAmount,
     string? ItemRarity,
     string? ItemType,
-    string? ItemStats,
+    IEnumerable<StatAmountDto> ItemStats,
     IEnumerable<ItemEventDto> ItemEvents,
     string? EquipmentSlot,
     string? HoldType,
