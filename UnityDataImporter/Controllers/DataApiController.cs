@@ -136,20 +136,29 @@ public class DataApiController(AppDbContext db) : ControllerBase
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
-            var table = new Models.LootTable { LootTableName = dto.Name, LootTableDatas = "[]" };
-            db.LootTables.Add(table);
-            await db.SaveChangesAsync();
+            var existing = await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.Name);
+            if (existing is not null)
+            {
+                db.LootTableData.RemoveRange(db.LootTableData.Where(e => e.LootTableId == dto.Name));
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                existing = new Models.LootTable { LootTableName = dto.Name, LootTableDatas = "[]" };
+                db.LootTables.Add(existing);
+                await db.SaveChangesAsync();
+            }
 
             foreach (var e in dto.Entries ?? [])
                 db.LootTableData.Add(new Models.LootTableData { LootTableId = dto.Name, ItemId = e.ItemId, Probability = e.Probability, MinAmount = e.MinAmount, MaxAmount = e.MaxAmount });
             await db.SaveChangesAsync();
 
             var savedEntries = await db.LootTableData.Where(e => e.LootTableId == dto.Name).ToListAsync();
-            table.LootTableDatas = JsonSerializer.Serialize(savedEntries.Select(e => e.Id));
+            existing.LootTableDatas = JsonSerializer.Serialize(savedEntries.Select(e => e.Id));
             await db.SaveChangesAsync();
 
             await tx.CommitAsync();
-            return CreatedAtAction(nameof(GetAllLootTables), new { id = table.Id }, new LootTableDto(table.Id, table.LootTableName, savedEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
+            return Ok(new LootTableDto(existing.Id, existing.LootTableName, savedEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
         }
         catch (Exception ex)
         {
@@ -165,22 +174,27 @@ public class DataApiController(AppDbContext db) : ControllerBase
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
-            var inputItems = (dto.InputItems ?? []).Select(i => new { i.ItemId, i.Amount }).ToList();
-            var recipe = new Models.Recipe
+            var existing = await db.Recipes.FirstOrDefaultAsync(r => r.RecipeName == dto.Name);
+            if (existing is not null)
             {
-                RecipeName = dto.Name,
-                RecipeCost = dto.RecipeCost,
-                InputItems = JsonSerializer.Serialize(inputItems),
-                OutputItems = JsonSerializer.Serialize(dto.OutputItems ?? [])
-            };
-            db.Recipes.Add(recipe);
+                existing.RecipeCost = dto.RecipeCost;
+                existing.InputItems = JsonSerializer.Serialize(dto.InputItems ?? []);
+                existing.OutputItems = JsonSerializer.Serialize(dto.OutputItems ?? []);
+            }
+            else
+            {
+                existing = new Models.Recipe
+                {
+                    RecipeName = dto.Name,
+                    RecipeCost = dto.RecipeCost,
+                    InputItems = JsonSerializer.Serialize(dto.InputItems ?? []),
+                    OutputItems = JsonSerializer.Serialize(dto.OutputItems ?? [])
+                };
+                db.Recipes.Add(existing);
+            }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-            return CreatedAtAction(nameof(GetAllRecipes), new { id = recipe.Id }, new RecipeDto(
-                recipe.Id, recipe.RecipeName,
-                dto.InputItems ?? [],
-                dto.OutputItems ?? [],
-                recipe.RecipeCost));
+            return Ok(new RecipeDto(existing.Id, existing.RecipeName, dto.InputItems ?? [], dto.OutputItems ?? [], existing.RecipeCost));
         }
         catch (Exception ex)
         {
@@ -199,38 +213,55 @@ public class DataApiController(AppDbContext db) : ControllerBase
             var recipeIds = new List<long>();
             foreach (var r in dto.Recipes ?? [])
             {
-                var recipe = new Models.Recipe
+                var existingRecipe = await db.Recipes.FirstOrDefaultAsync(x => x.RecipeName == r.Name);
+                if (existingRecipe is not null)
                 {
-                    RecipeName = r.Name,
-                    RecipeCost = r.RecipeCost,
-                    InputItems = JsonSerializer.Serialize(r.InputItems ?? []),
-                    OutputItems = JsonSerializer.Serialize(r.OutputItems ?? [])
-                };
-                db.Recipes.Add(recipe);
-                await db.SaveChangesAsync();
-                recipeIds.Add(recipe.Id);
+                    existingRecipe.RecipeCost = r.RecipeCost;
+                    existingRecipe.InputItems = JsonSerializer.Serialize(r.InputItems ?? []);
+                    existingRecipe.OutputItems = JsonSerializer.Serialize(r.OutputItems ?? []);
+                    await db.SaveChangesAsync();
+                    recipeIds.Add(existingRecipe.Id);
+                }
+                else
+                {
+                    var recipe = new Models.Recipe
+                    {
+                        RecipeName = r.Name,
+                        RecipeCost = r.RecipeCost,
+                        InputItems = JsonSerializer.Serialize(r.InputItems ?? []),
+                        OutputItems = JsonSerializer.Serialize(r.OutputItems ?? [])
+                    };
+                    db.Recipes.Add(recipe);
+                    await db.SaveChangesAsync();
+                    recipeIds.Add(recipe.Id);
+                }
             }
 
             var lootTable = dto.LootTableId is not null ? await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.LootTableId) : null;
-            var shop = new Models.NpcShop
+            var existingShop = dto.Name is not null ? await db.NpcsShop.FirstOrDefaultAsync(s => s.Name == dto.Name) : null;
+            if (existingShop is not null)
             {
-                Name = dto.Name,
-                LootTableId = lootTable?.Id,
-                Recipes = JsonSerializer.Serialize(recipeIds)
-            };
-            db.NpcsShop.Add(shop);
+                existingShop.LootTableId = lootTable?.Id;
+                existingShop.Recipes = JsonSerializer.Serialize(recipeIds);
+            }
+            else
+            {
+                existingShop = new Models.NpcShop { Name = dto.Name, LootTableId = lootTable?.Id, Recipes = JsonSerializer.Serialize(recipeIds) };
+                db.NpcsShop.Add(existingShop);
+            }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
+
             var createdRecipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
-            return CreatedAtAction(nameof(GetAllNpcShops), new { id = shop.Id }, new NpcShopDto(
-                shop.Id,
-                shop.Name,
+            return Ok(new NpcShopDto(
+                existingShop.Id,
+                existingShop.Name,
                 createdRecipes.Select(r => new RecipeDto(
                     r.Id, r.RecipeName,
                     JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
                     JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
                     r.RecipeCost)),
-                shop.LootTableId,
+                lootTable?.LootTableName,
                 lootTable?.LootTableName));
         }
         catch (Exception ex)
