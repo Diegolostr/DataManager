@@ -71,6 +71,9 @@ public class ItemRepository(AppDbContext db)
             """DELETE FROM "SoundsArray" WHERE "itemId" = {0}""", itemId);
         await db.Database.ExecuteSqlRawAsync(
             """DELETE FROM "WeaponData" WHERE "itemId" = {0}""", itemId);
+        // Nullify ammo references from other weapons pointing to this item
+        await db.Database.ExecuteSqlRawAsync(
+            """UPDATE "WeaponData" SET "ammo" = NULL WHERE "ammo" = {0}""", itemId);
         await db.Database.ExecuteSqlRawAsync(
             """DELETE FROM "Items" WHERE "Id" = {0}""", itemId);
 

@@ -75,7 +75,14 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
 
     public async Task<IActionResult> OnPostDeleteItemAsync(string id)
     {
-        await itemRepository.DeleteAsync(id);
+        try
+        {
+            await itemRepository.DeleteAsync(id);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
         return RedirectToPage();
     }
 

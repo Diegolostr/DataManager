@@ -6,6 +6,13 @@
 
 <link rel="stylesheet" href="~/css/items.css" />
 
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger" style="background:#4a2e2e;color:#f0b0b0;border:1px solid #5a3535;border-radius:var(--radius);padding:0.75rem 1rem;margin-bottom:1rem">
+        ⚠️ @err
+    </div>
+}
+
 <div class="items-page">
     <div class="items-header">
         <h1>🗡️ Items</h1>
