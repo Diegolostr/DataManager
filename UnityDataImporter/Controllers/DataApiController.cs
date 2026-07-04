@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using UnityDataImporter.Api;
 using UnityDataImporter.Data;
 using UnityDataImporter.Utils;
@@ -110,15 +111,103 @@ public class DataApiController(AppDbContext db) : ControllerBase
         return Ok(shops.Select(s => new NpcShopDto(s.Id, s.Recipes, s.LootTableId, s.LootTable?.LootTableName)));
     }
 
+    // POST /api/loottables
+    [HttpPost("loottables")]
+    public async Task<IActionResult> CreateLootTable([FromBody] CreateLootTableDto dto)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var table = new Models.LootTable { LootTableName = dto.Name, LootTableDatas = "[]" };
+            db.LootTables.Add(table);
+            await db.SaveChangesAsync();
+
+            foreach (var e in dto.Entries ?? [])
+                db.LootTableData.Add(new Models.LootTableData { LootTableId = table.Id, ItemId = e.ItemId, Probability = e.Probability, MinAmount = e.MinAmount, MaxAmount = e.MaxAmount });
+            await db.SaveChangesAsync();
+
+            var entryIds = await db.LootTableData.Where(e => e.LootTableId == table.Id).Select(e => e.Id).ToListAsync();
+            table.LootTableDatas = JsonSerializer.Serialize(entryIds);
+            await db.SaveChangesAsync();
+
+            await tx.CommitAsync();
+            return CreatedAtAction(nameof(GetAllLootTables), new { id = table.Id }, new LootTableDto(table.Id, table.LootTableName, entryIds.Select((id, i) => { var e = dto.Entries!.ElementAt(i); return new LootTableEntryDto(id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount); })));
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // POST /api/recipes
+    [HttpPost("recipes")]
+    public async Task<IActionResult> CreateRecipe([FromBody] CreateRecipeDto dto)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var inputItems = (dto.InputItems ?? []).Select(i => new { i.ItemId, i.Amount }).ToList();
+            var recipe = new Models.Recipe
+            {
+                RecipeName = dto.Name,
+                RecipeCost = dto.RecipeCost,
+                InputItems = JsonSerializer.Serialize(inputItems),
+                OutputItems = JsonSerializer.Serialize(dto.OutputItems ?? [])
+            };
+            db.Recipes.Add(recipe);
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return CreatedAtAction(nameof(GetAllRecipes), new { id = recipe.Id }, new RecipeDto(recipe.Id, recipe.RecipeName, recipe.InputItems, recipe.OutputItems, recipe.RecipeCost));
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // POST /api/npcshops
+    [HttpPost("npcshops")]
+    public async Task<IActionResult> CreateNpcShop([FromBody] CreateNpcShopDto dto)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var shop = new Models.NpcShop
+            {
+                LootTableId = dto.LootTableId,
+                Recipes = JsonSerializer.Serialize(dto.RecipeIds ?? [])
+            };
+            db.NpcsShop.Add(shop);
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return CreatedAtAction(nameof(GetAllNpcShops), new { id = shop.Id }, new NpcShopDto(shop.Id, shop.Recipes, shop.LootTableId, null));
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
     // POST /api/items
     [HttpPost("items")]
     public async Task<IActionResult> CreateItem([FromBody] CreateItemDto dto)
     {
-        var existing = await db.Items.FirstOrDefaultAsync(i => i.Id == dto.Id);
-        if (existing is null)
-            return await InsertItem(dto);
-        else
-            return await UpdateItem(dto, existing);
+        await using var tx = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var existing = await db.Items.FirstOrDefaultAsync(i => i.Id == dto.Id);
+            IActionResult result = existing is null ? await InsertItem(dto) : await UpdateItem(dto, existing);
+            await tx.CommitAsync();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = ex.InnerException?.Message ?? ex.Message });
+        }
     }
 
     private async Task<IActionResult> InsertItem(CreateItemDto dto)
