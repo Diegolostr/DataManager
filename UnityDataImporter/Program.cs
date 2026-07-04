@@ -36,8 +36,13 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler(errApp => errApp.Run(async ctx =>
+    {
+        ctx.Response.StatusCode = 500;
+        ctx.Response.ContentType = "application/json";
+        var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        await ctx.Response.WriteAsync($"{{\"error\":\"{ex?.Error.Message}\",\"stack\":\"{ex?.Error.StackTrace?.Replace("\"", "'")}\"}}");
+    }));
     app.UseHsts();
 }
 
