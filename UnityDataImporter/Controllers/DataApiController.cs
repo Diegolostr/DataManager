@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using UnityDataImporter.Api;
 using UnityDataImporter.Data;
@@ -6,8 +8,26 @@ using UnityDataImporter.Utils;
 
 namespace UnityDataImporter.Controllers;
 
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class ApiKeyAuthAttribute : Attribute, IAsyncActionFilter
+{
+    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        var expectedKey = Environment.GetEnvironmentVariable("API_KEY");
+        if (string.IsNullOrWhiteSpace(expectedKey)) { await next(); return; }
+        if (!context.HttpContext.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != expectedKey)
+        {
+            context.Result = new UnauthorizedResult();
+            return;
+        }
+        await next();
+    }
+}
+
 [ApiController]
 [Route("api")]
+[AllowAnonymous]
+[ApiKeyAuth]
 public class DataApiController(AppDbContext db) : ControllerBase
 {
     // GET /api/items
@@ -129,7 +149,6 @@ public class DataApiController(AppDbContext db) : ControllerBase
 
     private async Task<IActionResult> UpdateItem(CreateItemDto dto, Models.Item existing)
     {
-        // Size
         if (existing.ItemSize.HasValue)
         {
             var vec = await db.Vector2.FindAsync(existing.ItemSize.Value);
@@ -231,22 +250,12 @@ public class DataApiController(AppDbContext db) : ControllerBase
     }
 
     private static ItemDto MapItem(Models.Item i, IEnumerable<Models.MagicAttack> magicAttacks, IEnumerable<Models.ItemEvent> itemEvents, IEnumerable<Models.StatsAmount> stats) => new(
-        i.Id,
-        i.Name,
-        i.Description,
-        i.IsStackable,
-        i.MaxAmount,
+        i.Id, i.Name, i.Description, i.IsStackable, i.MaxAmount,
         i.Icon is not null ? ImageUtils.ToBase64(i.Icon) : null,
-        i.BuyAmount,
-        i.SellAmount,
-        i.CanBlock,
-        i.BlockAmount,
-        i.ItemRarity,
-        i.ItemType,
+        i.BuyAmount, i.SellAmount, i.CanBlock, i.BlockAmount, i.ItemRarity, i.ItemType,
         stats.Select(s => new StatAmountDto(s.Id, s.Stat, s.Amount)),
         itemEvents.Select(e => new ItemEventDto(e.Id, e.EventTypeId, e.EventType?.EventName, e.EventType?.Icon is not null ? Convert.ToBase64String(e.EventType.Icon) : null)),
-        i.EquipmentSlot,
-        i.HoldType,
+        i.EquipmentSlot, i.HoldType,
         i.Weapon is null ? null : new WeaponDataDto(i.Weapon.Id, i.Weapon.Damage, i.Weapon.Heaviness, i.Weapon.Ammo, i.Weapon.Cooldown),
         magicAttacks.Select(m => new MagicAttackDto(m.Id, m.MagicType, m.MagicDamage, m.Cooldown, m.ProjectileSpeed, m.EffectType, m.ManaConsumption, m.MaxCompanions)),
         i.BlockSoundsNavigation is null ? null : new ItemAudioDto(i.BlockSoundsNavigation.Id, Convert.ToBase64String(i.BlockSoundsNavigation.Audio), i.BlockSoundsNavigation.Name, i.BlockSoundsNavigation.Prefix),
