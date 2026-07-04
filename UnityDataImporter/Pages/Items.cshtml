@@ -327,10 +327,8 @@
                             <div class="ifield"><span class="ilabel">Item Name</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Name" value="@item.Name" disabled /></span></div>
                             <div class="ifield"><span class="ilabel">Description</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Description" value="@item.Description" disabled /></span></div>
                             <div class="ifield"><span class="ilabel">Item ID</span><span class="ivalue"><code>@item.Id</code></span></div>
-                            <div class="ifield">
-                                <span class="ilabel">Item Size</span>
-                                <span class="ivalue">@(item.Size != null ? $"X {item.Size.X}  Y {item.Size.Y}" : "-")</span>
-                            </div>
+                            <div class="ifield"><span class="ilabel">Size X</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeX" value="@item.Size?.X" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Size Y</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeY" value="@item.Size?.Y" disabled /></span></div>
                             <div class="ifield">
                                 <span class="ilabel">Is Stackable</span>
                                 <span class="ivalue">

@@ -97,6 +97,30 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
         var iconBytes = await ReadFileAsync(EditIcon);
         if (iconBytes is { Length: > 0 }) await itemRepository.PostImageAsync(itemId, iconBytes);
 
+        // Size upsert
+        var sizeX = double.TryParse(Request.Form["EditItem.SizeX"], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var sx) ? sx : (double?)null;
+        var sizeY = double.TryParse(Request.Form["EditItem.SizeY"], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var sy) ? sy : (double?)null;
+        if (sizeX.HasValue)
+        {
+            var itemForSize = await db.Items.FindAsync(itemId);
+            if (itemForSize is not null)
+            {
+                if (itemForSize.ItemSize.HasValue)
+                {
+                    var vec = await db.Vector2.FindAsync(itemForSize.ItemSize.Value);
+                    if (vec is not null) { vec.X = sizeX.Value; vec.Y = sizeY; }
+                }
+                else
+                {
+                    var vec = new Models.Vector2 { X = sizeX.Value, Y = sizeY };
+                    db.Vector2.Add(vec);
+                    await db.SaveChangesAsync();
+                    itemForSize.ItemSize = vec.Id;
+                }
+                await db.SaveChangesAsync();
+            }
+        }
+
         // 2. Deleted stats
         var deletedStats = ParseLongList(DeletedStatsJson);
         foreach (var sid in deletedStats)
