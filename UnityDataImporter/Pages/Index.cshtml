@@ -1,0 +1,488 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<div class="dashboard-page">
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <div class="dashboard-header-actions">
+            <a class="btn btn-ghost btn-sm" asp-page="Items">Items</a>
+            <a class="btn btn-ghost btn-sm" asp-page="LootTables">Loot Tables</a>
+            <a class="btn btn-ghost btn-sm" asp-page="Recipes">Recipes</a>
+            <a class="btn btn-ghost btn-sm" asp-page="NpcShops">NPC Shops</a>
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <span class="stat-number">@Model.Items.Count()</span>
+            <span class="stat-label">Total Items</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@Model.Items.Count(i => i.WeaponData != null)</span>
+            <span class="stat-label">Son Armas</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@Model.Items.Count(i => i.IsStackable == true)</span>
+            <span class="stat-label">Stackables</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@Model.LootTableCount</span>
+            <span class="stat-label">Loot Tables</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@Model.RecipeCount</span>
+            <span class="stat-label">Recipes</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">@Model.NpcShopCount</span>
+            <span class="stat-label">NPC Shops</span>
+        </div>
+    </div>
+
+    <!-- Lookup Cards -->
+    <div class="lookup-grid">
+
+        <!-- Item Types -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>🗂️ Item Types</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formItemType')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formItemType" class="lookup-add-form" method="post" asp-page-handler="AddItemType" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewItemType" placeholder="Nuevo tipo..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var t in Model.ItemTypes)
+                {
+                    <li>
+                        <span>@t</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditItemType" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@t" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@t" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Equipment Slots -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>🛡️ Equipment Slots</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formEquipmentSlot')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formEquipmentSlot" class="lookup-add-form" method="post" asp-page-handler="AddEquipmentSlot" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewEquipmentSlot" placeholder="Nuevo slot..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var s in Model.EquipmentSlots)
+                {
+                    <li>
+                        <span>@s</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditEquipmentSlot" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@s" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@s" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Rarities -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>💎 Rarities</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formRarity')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formRarity" class="lookup-add-form" method="post" asp-page-handler="AddRarity" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewRarity" placeholder="Nueva rareza..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var r in Model.Rarities)
+                {
+                    <li>
+                        <span>@r</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditRarity" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@r" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@r" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Stats -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>📊 Stats</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formStat')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formStat" class="lookup-add-form" method="post" asp-page-handler="AddStat" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewStat" placeholder="Nuevo stat..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var s in Model.StatsList)
+                {
+                    <li>
+                        <span>@s</span>
+                        <button class="btn-icon" onclick="toggleEdit(this)">✏️</button>
+                    </li>
+                    <li class="lookup-edit-form">
+                        <form method="post" asp-page-handler="EditStat" class="lookup-edit-form" style="width:100%">
+                            <input type="hidden" name="EditId" value="@s" />
+                            <input class="form-control form-control-sm" name="EditValue" value="@s" required />
+                            <button type="submit" class="btn btn-success btn-xs">✓</button>
+                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit(this.closest('li').previousElementSibling.querySelector('button'))">✕</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Inventory Sounds -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>🔊 Inventory Sounds</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formInventorySound')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formInventorySound" class="lookup-add-form" method="post" asp-page-handler="AddInventorySound" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewInventorySound" placeholder="Nuevo sonido..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var s in Model.InventorySounds)
+                {
+                    <li>
+                        <span>[@s.Id] @s.Sound</span>
+                    </li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Effect Types -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>✨ Effect Types</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formEffectType')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formEffectType" class="lookup-add-form" method="post" asp-page-handler="AddEffectType" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewEffectType" placeholder="Nuevo effect type..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var e in Model.EffectTypes)
+                {
+                    <li><span>@e</span></li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Magic Types -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>🔮 Magic Types</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formMagicType')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formMagicType" class="lookup-add-form" method="post" asp-page-handler="AddMagicType" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewMagicType" placeholder="Nuevo magic type..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var m in Model.MagicTypes)
+                {
+                    <li><span>@m</span></li>
+                }
+            </ul>
+            </div>
+        </details>
+
+        <!-- Magic Status Effects -->
+        <details class="lookup-card">
+            <summary class="lookup-card-header">
+                <span>💥 Magic Status Effects</span>
+                <button class="btn btn-ghost btn-xs" onclick="event.preventDefault(); toggleForm('formMagicStatusEffect')">+ Añadir</button>
+            </summary>
+            <div class="lookup-card-content">
+            <form id="formMagicStatusEffect" class="lookup-add-form" method="post" asp-page-handler="AddMagicStatusEffect" style="display:none">
+                <input class="form-control form-control-sm" asp-for="NewMagicStatusEffect" placeholder="Nuevo status effect..." required />
+                <button type="submit" class="btn btn-success btn-xs">✓</button>
+            </form>
+            <ul class="lookup-list">
+                @foreach (var m in Model.MagicStatusEffects)
+                {
+                    <li><span>@m</span></li>
+                }
+            </ul>
+            </div>
+        </details>
+
+    </div>
+
+    <details class="section-foldout">
+        <summary class="section-foldout-header">📦 Items <span class="section-foldout-count">(@Model.Items.Count())</span></summary>
+        <div class="section-foldout-body">
+            <div class="filter-bar">
+                <input type="text" id="itemSearch" class="form-control" placeholder="Buscar por ID, nombre o descripción..." oninput="applyFilters()" />
+                <button class="btn btn-ghost btn-sm" onclick="toggleFilters()">⚙️ Filtros</button>
+                <button class="btn btn-danger btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+            </div>
+            <div class="filter-panel" id="filterPanel" style="display:none">
+                <div class="filter-grid">
+                    <div>
+                        <label class="filter-label">Item Type</label>
+                        <select id="f-type" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            @foreach (var t in Model.ItemTypes) { <option value="@t.ToLower()">@t</option> }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Rarity</label>
+                        <select id="f-rarity" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todas</option>
+                            @foreach (var r in Model.Rarities) { <option value="@r.ToLower()">@r</option> }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Equipment Slot</label>
+                        <select id="f-slot" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            @foreach (var s in Model.EquipmentSlots) { <option value="@s.ToLower()">@s</option> }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Hold Type</label>
+                        <select id="f-hold" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            @foreach (var h in Model.HoldTypes) { <option value="@h.ToLower()">@h</option> }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Stackable</label>
+                        <select id="f-stack" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Can Block</label>
+                        <select id="f-block" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Weapon Data</label>
+                        <select id="f-weapon" class="form-select form-select-sm" onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            <option value="yes">Tiene</option>
+                            <option value="no">No tiene</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="items-grid" id="itemsGrid">
+                @foreach (var item in Model.Items)
+                {
+                    <a class="item-card" asp-page="Items" asp-route-itemId="@item.Id"
+                       data-id="@item.Id.ToLower()"
+                       data-name="@(item.Name?.ToLower() ?? "")"
+                       data-desc="@(item.Description?.ToLower() ?? "")"
+                       data-type="@(item.ItemType?.ToLower() ?? "")"
+                       data-rarity="@(item.ItemRarity?.ToLower() ?? "")"
+                       data-slot="@(item.EquipmentSlot?.ToLower() ?? "")"
+                       data-hold="@(item.HoldType?.ToLower() ?? "")"
+                       data-stack="@(item.IsStackable?.ToString().ToLower() ?? "")"
+                       data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
+                       data-weapon="@(item.WeaponData != null ? "yes" : "no")">
+                        <div class="item-card-icon">
+                            @if (item.Icon != null)
+                            {
+                                <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(item.Icon)" alt="@item.Id" />
+                            }
+                            else
+                            {
+                                <span class="no-icon">?</span>
+                            }
+                        </div>
+                        <span class="item-card-id">@item.Id</span>
+                    </a>
+                }
+            </div>
+        </div>
+    </details>
+
+    <details class="section-foldout">
+        <summary class="section-foldout-header">🎲 Loot Tables <span class="section-foldout-count">(@Model.LootTableCount)</span></summary>
+        <div class="section-foldout-body">
+            <input type="text" id="ltIndexSearch" class="form-control" placeholder="Buscar loot table..." style="max-width:320px;margin-bottom:0.75rem" />
+            <div class="lt-list-preview" id="ltIndexGrid">
+                @foreach (var lt in Model.LootTablePreviews)
+                {
+                    <a class="lt-preview-card" asp-page="LootTables" data-name="@((lt.Name ?? "").ToLower())">
+                        <span class="lt-preview-id">@(lt.Name ?? $"#{lt.Id}")</span>
+                        <span class="lt-preview-count">@lt.EntryCount entradas</span>
+                    </a>
+                }
+                @if (!Model.LootTablePreviews.Any())
+                {
+                    <span style="color:var(--text-muted);font-size:0.85rem">No hay loot tables. <a asp-page="LootTables">Crear una</a></span>
+                }
+            </div>
+        </div>
+    </details>
+
+    <details class="section-foldout">
+        <summary class="section-foldout-header">🍳 Recipes <span class="section-foldout-count">(@Model.RecipeCount)</span></summary>
+        <div class="section-foldout-body">
+            <input type="text" id="recipeIndexSearch" class="form-control" placeholder="Buscar recipe..." style="max-width:320px;margin-bottom:0.75rem" />
+            <div class="lt-list-preview" id="recipeIndexGrid">
+                @foreach (var r in Model.RecipePreviews)
+                {
+                    <a class="lt-preview-card" asp-page="Recipes" data-name="@r.Name.ToLower()">
+                        <span class="lt-preview-id">@r.Name</span>
+                        <span class="lt-preview-count">@r.InputCount in · @r.OutputCount out</span>
+                    </a>
+                }
+                @if (!Model.RecipePreviews.Any())
+                {
+                    <span style="color:var(--text-muted);font-size:0.85rem">No hay recipes. <a asp-page="Recipes">Crear una</a></span>
+                }
+            </div>
+        </div>
+    </details>
+
+    <details class="section-foldout">
+        <summary class="section-foldout-header">🏪 NPC Shops <span class="section-foldout-count">(@Model.NpcShopCount)</span></summary>
+        <div class="section-foldout-body">
+            <input type="text" id="shopIndexSearch" class="form-control" placeholder="Buscar NPC shop..." style="max-width:320px;margin-bottom:0.75rem" />
+            <div class="lt-list-preview" id="shopIndexGrid">
+                @foreach (var s in Model.NpcShopPreviews)
+                {
+                    <a class="lt-preview-card" asp-page="NpcShops" data-id="@s.Id" data-lt="@((s.LootTableName ?? "").ToLower())">
+                        <span class="lt-preview-id">#@s.Id</span>
+                        <span class="lt-preview-count">@s.RecipeCount recipes</span>
+                        @if (s.LootTableName != null)
+                        {
+                            <span class="lt-preview-count">🎲 @s.LootTableName</span>
+                        }
+                    </a>
+                }
+                @if (!Model.NpcShopPreviews.Any())
+                {
+                    <span style="color:var(--text-muted);font-size:0.85rem">No hay NPC shops. <a asp-page="NpcShops">Crear uno</a></span>
+                }
+            </div>
+        </div>
+    </details>
+</div>
+
+<script>
+    function applyFilters() {
+        const q = document.getElementById('itemSearch').value.toLowerCase();
+        const type = document.getElementById('f-type').value;
+        const rarity = document.getElementById('f-rarity').value;
+        const slot = document.getElementById('f-slot').value;
+        const hold = document.getElementById('f-hold').value;
+        const stack = document.getElementById('f-stack').value;
+        const block = document.getElementById('f-block').value;
+        const weapon = document.getElementById('f-weapon').value;
+        document.querySelectorAll('#itemsGrid .item-card').forEach(c => {
+            const d = c.dataset;
+            const match =
+                (!q || d.id.includes(q) || d.name.includes(q) || d.desc.includes(q)) &&
+                (!type   || d.type   === type)   &&
+                (!rarity || d.rarity === rarity) &&
+                (!slot   || d.slot   === slot)   &&
+                (!hold   || d.hold   === hold)   &&
+                (!stack  || d.stack  === stack)  &&
+                (!block  || d.block  === block)  &&
+                (!weapon || d.weapon === weapon);
+            c.style.display = match ? '' : 'none';
+        });
+    }
+
+    function toggleFilters() {
+        const p = document.getElementById('filterPanel');
+        p.style.display = p.style.display === 'none' ? '' : 'none';
+    }
+
+    function clearFilters() {
+        document.getElementById('itemSearch').value = '';
+        ['f-type','f-rarity','f-slot','f-hold','f-stack','f-block','f-weapon'].forEach(id => document.getElementById(id).value = '');
+        applyFilters();
+    }
+
+    function toggleForm(id) {
+        const form = document.getElementById(id);
+        form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function toggleEdit(btn) {
+        const li = btn.closest('li');
+        const editLi = li.nextElementSibling;
+        const form = editLi.querySelector('.lookup-edit-form');
+        const isOpen = form.classList.contains('active');
+        form.classList.toggle('active', !isOpen);
+        editLi.style.display = isOpen ? 'none' : 'block';
+    }
+
+    document.getElementById('ltIndexSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#ltIndexGrid .lt-preview-card').forEach(el => {
+            el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
+        });
+    });
+
+    document.getElementById('recipeIndexSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#recipeIndexGrid .lt-preview-card').forEach(el => {
+            el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
+        });
+    });
+
+    document.getElementById('shopIndexSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#shopIndexGrid .lt-preview-card').forEach(el => {
+            el.style.display = !q || el.dataset.id.includes(q) || el.dataset.lt.includes(q) ? '' : 'none';
+        });
+    });
+</script>

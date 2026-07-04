@@ -1,0 +1,155 @@
+@page
+@model NpcShopsModel
+@{
+    ViewData["Title"] = "NPC Shops";
+}
+
+<link rel="stylesheet" href="~/css/items.css" />
+<link rel="stylesheet" href="~/css/npcshops.css" />
+
+<div class="items-page">
+    <div class="items-header">
+        <h1>🏪 NPC Shops</h1>
+        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addShopModal').style.display='flex'">+ Nueva Shop</button>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por ID..." />
+    </div>
+
+    <!-- Modal Nueva Shop -->
+    <div id="addShopModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>🏪 Nueva NPC Shop</h4>
+            <form method="post" asp-page-handler="AddShop">
+                <div class="mb-3">
+                    <label>Loot Table (opcional)</label>
+                    <select class="form-select" name="NewShopLootTableId">
+                        <option value="">-</option>
+                        @foreach (var lt in Model.AllLootTables)
+                        {
+                            <option value="@lt.Id">@(lt.LootTableName ?? $"#{lt.Id}")</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Crear</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addShopModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Recipe -->
+    <div id="addRecipeModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>➕ Añadir Recipe</h4>
+            <form method="post" asp-page-handler="AddRecipe">
+                <input type="hidden" id="addRecipeShopId" name="TargetShopId" />
+                <div class="mb-3">
+                    <label>Recipe</label>
+                    <select class="form-select" name="AddRecipeId" required>
+                        <option value="">-</option>
+                        @foreach (var r in Model.AllRecipes)
+                        {
+                            <option value="@r.Id">@r.RecipeName</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Añadir</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addRecipeModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Loot Table -->
+    <div id="editLootTableModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>🎲 Cambiar Loot Table</h4>
+            <form method="post" asp-page-handler="UpdateLootTable">
+                <input type="hidden" id="editLtShopId" name="TargetShopId" />
+                <div class="mb-3">
+                    <label>Loot Table</label>
+                    <select class="form-select" name="EditLootTableId">
+                        <option value="">-</option>
+                        @foreach (var lt in Model.AllLootTables)
+                        {
+                            <option value="@lt.Id">@(lt.LootTableName ?? $"#{lt.Id}")</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editLootTableModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="shop-list" id="shopList">
+        @foreach (var shop in Model.Shops)
+        {
+            var recipeIds = Model.ParseRecipeIds(shop.Recipes);
+            <div class="shop-entry" data-id="@shop.Id">
+                <div class="shop-header">
+                    <span class="shop-id">Shop #@shop.Id</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="shop-lt-badge">
+                            🎲 @(shop.LootTable?.LootTableName ?? (shop.LootTableId.HasValue ? $"#{shop.LootTableId}" : "Sin loot table"))
+                        </span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openEditLt(@shop.Id)">✏️</button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="openAddRecipe(@shop.Id)">+ Recipe</button>
+                        <form method="post" asp-page-handler="DeleteShop" style="margin:0">
+                            <input type="hidden" name="id" value="@shop.Id" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="shop-recipes">
+                    @if (!recipeIds.Any())
+                    {
+                        <span class="shop-empty">Sin recipes</span>
+                    }
+                    else
+                    {
+                        @foreach (var rid in recipeIds)
+                        {
+                            var recipe = Model.RecipesById.GetValueOrDefault(rid);
+                            <div class="shop-recipe-row">
+                                <span class="shop-recipe-name">@(recipe?.RecipeName ?? $"Recipe #{rid}")</span>
+                                @if (recipe?.RecipeCost.HasValue == true)
+                                {
+                                    <span class="badge bg-warning text-dark">💰 @recipe.RecipeCost</span>
+                                }
+                                <form method="post" asp-page-handler="RemoveRecipe" style="margin:0">
+                                    <input type="hidden" name="shopId" value="@shop.Id" />
+                                    <input type="hidden" name="recipeId" value="@rid" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                </form>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function openAddRecipe(shopId) {
+        document.getElementById('addRecipeShopId').value = shopId;
+        document.getElementById('addRecipeModal').style.display = 'flex';
+    }
+    function openEditLt(shopId) {
+        document.getElementById('editLtShopId').value = shopId;
+        document.getElementById('editLootTableModal').style.display = 'flex';
+    }
+
+    document.getElementById('shopSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#shopList .shop-entry').forEach(el => {
+            el.style.display = !q || el.dataset.id.includes(q) ? '' : 'none';
+        });
+    });
+</script>

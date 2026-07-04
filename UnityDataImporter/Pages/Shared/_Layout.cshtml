@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - UnityDataImporter</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-layout">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <a class="sidebar-brand" asp-area="" asp-page="/Index">UnityData</a>
+                <button id="sidebarToggle" class="sidebar-toggle" title="Toggle sidebar">&#9776;</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-item" asp-area="" asp-page="/Index">Dashboard</a>
+                <a class="sidebar-item" asp-area="" asp-page="/Items">Items</a>
+                <a class="sidebar-item" asp-area="" asp-page="/LootTables">Loot Tables</a>
+                <a class="sidebar-item" asp-area="" asp-page="/Recipes">Recipes</a>
+                <a class="sidebar-item" asp-area="" asp-page="/NpcShops">NPC Shops</a>
+            </nav>
+        </aside>
+        <div class="app-content p-4">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

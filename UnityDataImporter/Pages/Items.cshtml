@@ -1,0 +1,860 @@
+@page
+@model ItemsModel
+@{
+    ViewData["Title"] = "Items";
+}
+
+<link rel="stylesheet" href="~/css/items.css" />
+
+<div class="items-page">
+    <div class="items-header">
+        <h1>🗡️ Items</h1>
+        <div class="d-flex align-items-center gap-3">
+            @if (Model.FilteredItemId != null)
+            {
+                <span class="badge bg-primary fs-6">🔍 @Model.FilteredItemId</span>
+                <a class="btn btn-outline-secondary btn-sm" asp-page="Items">Ver todos</a>
+            }
+            <button class="btn btn-primary px-4" onclick="document.getElementById('addModal').style.display='flex'">
+                + Nuevo Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo -->
+    <div id="addModal" class="modal-overlay">
+        <div class="modal-card modal-card-lg">
+            <h4>➕ Nuevo Item</h4>
+            <form method="post" asp-page-handler="AddItem" enctype="multipart/form-data">
+                <div class="modal-form-grid">
+                    <div class="mb-3">
+                        <label>Id</label>
+                        <input class="form-control" asp-for="NewItem.Id" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Name</label>
+                        <input class="form-control" asp-for="NewItem.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Description</label>
+                        <input class="form-control" asp-for="NewItem.Description" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Type</label>
+                        <div class="input-group">
+                            <select class="form-select" asp-for="NewItem.ItemType" id="newItemType" onchange="onNewItemTypeChange(this)">
+                                <option value="">-</option>
+                                @foreach (var t in Model.ItemTypes) { <option value="@t">@t</option> }
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleInline('addItemTypeForm', this)">+</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Rarity</label>
+                        <div class="input-group">
+                            <select class="form-select" asp-for="NewItem.ItemRarity">
+                                <option value="">-</option>
+                                @foreach (var r in Model.Rarities) { <option value="@r">@r</option> }
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleInline('addRarityForm', this)">+</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Inventory Sound</label>
+                        <select class="form-select" asp-for="NewItem.ItemSoundType">
+                            <option value="">-</option>
+                            @foreach (var s in Model.InventorySounds) { <option value="@s.Id">@s.Sound</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3" id="new-field-equipslot" style="display:none">
+                        <label>Equipment Slot</label>
+                        <select class="form-select" asp-for="NewItem.EquipmentSlot">
+                            <option value="">-</option>
+                            @foreach (var s in Model.EquipmentSlots) { <option value="@s">@s</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3" id="new-field-holdtype" style="display:none">
+                        <label>Hold Type</label>
+                        <div class="input-group">
+                            <select class="form-select" asp-for="NewItem.HoldType">
+                                <option value="">-</option>
+                                @foreach (var h in Model.HoldTypes) { <option value="@h">@h</option> }
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleInline('addHoldTypeForm', this)">+</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Stackable</label>
+                        <select class="form-select" asp-for="NewItem.IsStackable" onchange="onStackableChange(this)">
+                            <option value="">-</option>
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Max Amount</label>
+                        <input class="form-control" type="number" asp-for="NewItem.MaxAmount" id="maxAmount" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Buy Amount</label>
+                        <input class="form-control" type="number" asp-for="NewItem.BuyAmount" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Sell Amount</label>
+                        <input class="form-control" type="number" asp-for="NewItem.SellAmount" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Can Block</label>
+                        <select class="form-select" asp-for="NewItem.CanBlock" onchange="onNewCanBlockChange(this)">
+                            <option value="">-</option>
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="new-field-blockamount" style="display:none">
+                        <label>Block Amount</label>
+                        <input class="form-control" type="number" step="0.01" asp-for="NewItem.BlockAmount" />
+                    </div>
+                    <div class="mb-3" id="new-field-blocksound" style="display:none">
+                        <label>Block Sound</label>
+                        <input class="form-control" type="file" name="NewBlockSound" accept="audio/*" />
+                    </div>
+                    <div class="mb-3" id="new-field-parryaudio" style="display:none">
+                        <label>Parry Audio</label>
+                        <input class="form-control" type="file" name="NewParryAudio" accept="audio/*" />
+                    </div>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Item Event -->
+    <div id="addItemEventModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>🎯 Añadir Event</h4>
+            <form method="post" asp-page-handler="AddItemEvent" enctype="multipart/form-data">
+                <input type="hidden" id="addItemEventItemId" name="NewItemEvent.ItemId" />
+                <div class="mb-3">
+                    <label>Event Name</label>
+                    <input class="form-control" name="NewItemEvent.EventName" />
+                </div>
+                <div class="mb-3">
+                    <label>Event Type</label>
+                    <div class="input-group">
+                        <select class="form-select" name="NewItemEvent.EventType">
+                            <option value="">-</option>
+                            @foreach (var et in Model.EventTypes) { <option value="@et">@et</option> }
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" onclick="toggleInline('addEventTypeForm', this)">+</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Icon</label>
+                    <input class="form-control" type="file" name="NewItemEventIcon" accept="image/*" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addItemEventModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Stat -->
+    <div id="addStatModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>📊 Añadir Stat</h4>
+            <form method="post" asp-page-handler="AddStat">
+                <input type="hidden" id="addStatItemId" name="NewStat.Item" />
+                <div class="mb-3">
+                    <label>Stat</label>
+                    <select class="form-select" name="NewStat.Stat" required>
+                        <option value="">-</option>
+                        @foreach (var s in Model.StatTypes) { <option value="@s">@s</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Amount</label>
+                    <input class="form-control" type="number" name="NewStat.Amount" required />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addStatModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Weapon -->
+    <div id="editWeaponModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>⚔️ Editar Weapon Data</h4>
+            <form method="post" asp-page-handler="EditWeapon">
+                <input type="hidden" id="editWeaponId" name="EditWeapon.Id" />
+                <input type="hidden" id="editWeaponItemId" name="EditWeapon.ItemId" />
+                <div class="mb-3">
+                    <label>Weapon ID</label>
+                    <input class="form-control" id="editWeaponIdDisplay" disabled />
+                </div>
+                <div class="mb-3">
+                    <label>Item ID</label>
+                    <input class="form-control" id="editWeaponItemIdDisplay" disabled />
+                </div>
+                <div class="mb-3">
+                    <label>Damage</label>
+                    <input class="form-control" type="number" id="editWeaponDamage" name="EditWeapon.Damage" />
+                </div>
+                <div class="mb-3">
+                    <label>Heaviness</label>
+                    <input class="form-control" type="number" id="editWeaponHeaviness" name="EditWeapon.Heaviness" />
+                </div>
+                <div class="mb-3">
+                    <label>Ammo (Item ID)</label>
+                    <input class="form-control" id="editWeaponAmmo" name="EditWeapon.Ammo" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editWeaponModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Magic Attack -->
+    <div id="addMagicModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>✨ Nueva Magic Attack</h4>
+            <form method="post" asp-page-handler="AddMagicAttack">
+                <input type="hidden" id="addMagicItemId" name="NewMagicAttack.ItemId" />
+                <div class="mb-3">
+                    <label>Magic Type</label>
+                    <select class="form-select" name="NewMagicAttack.MagicType" required>
+                        <option value="">-</option>
+                        @foreach (var mt in Model.MagicTypes) { <option value="@mt">@mt</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Magic Damage</label>
+                    <input class="form-control" type="number" name="NewMagicAttack.MagicDamage" />
+                </div>
+                <div class="mb-3">
+                    <label>Cooldown</label>
+                    <input class="form-control" type="number" step="0.01" name="NewMagicAttack.Cooldown" />
+                </div>
+                <div class="mb-3">
+                    <label>Projectile Speed</label>
+                    <input class="form-control" type="number" step="0.01" name="NewMagicAttack.ProjectileSpeed" />
+                </div>
+                <div class="mb-3">
+                    <label>Effect Type</label>
+                    <select class="form-select" name="NewMagicAttack.EffectType">
+                        <option value="">-</option>
+                        @foreach (var et in Model.EffectTypes) { <option value="@et">@et</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Mana Consumption</label>
+                    <input class="form-control" type="number" name="NewMagicAttack.ManaConsumption" />
+                </div>
+                <div class="mb-3">
+                    <label>Max Companions</label>
+                    <input class="form-control" type="number" name="NewMagicAttack.MaxCompanions" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addMagicModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Magic Attack -->
+    <div id="editMagicModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>✏️ Editar Magic Attack</h4>
+            <form method="post" asp-page-handler="EditMagicAttack">
+                <input type="hidden" id="editMagicId" name="NewMagicAttack.Id" />
+                <input type="hidden" id="editMagicItemId" name="NewMagicAttack.ItemId" />
+                <div class="mb-3">
+                    <label>Magic Type</label>
+                    <select class="form-select" id="editMagicType" name="NewMagicAttack.MagicType" required>
+                        <option value="">-</option>
+                        @foreach (var mt in Model.MagicTypes) { <option value="@mt">@mt</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Magic Damage</label>
+                    <input class="form-control" type="number" id="editMagicDamage" name="NewMagicAttack.MagicDamage" />
+                </div>
+                <div class="mb-3">
+                    <label>Cooldown</label>
+                    <input class="form-control" type="number" step="0.01" id="editMagicCooldown" name="NewMagicAttack.Cooldown" />
+                </div>
+                <div class="mb-3">
+                    <label>Projectile Speed</label>
+                    <input class="form-control" type="number" step="0.01" id="editMagicProjectileSpeed" name="NewMagicAttack.ProjectileSpeed" />
+                </div>
+                <div class="mb-3">
+                    <label>Effect Type</label>
+                    <select class="form-select" id="editMagicEffectType" name="NewMagicAttack.EffectType">
+                        <option value="">-</option>
+                        @foreach (var et in Model.EffectTypes) { <option value="@et">@et</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Mana Consumption</label>
+                    <input class="form-control" type="number" id="editMagicMana" name="NewMagicAttack.ManaConsumption" />
+                </div>
+                <div class="mb-3">
+                    <label>Max Companions</label>
+                    <input class="form-control" type="number" id="editMagicCompanions" name="NewMagicAttack.MaxCompanions" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editMagicModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <input type="text" id="itemSearch" class="form-control" placeholder="Buscar por ID, nombre o descripción..." oninput="applyFilters()" />
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleFilters()">⚙️ Filtros</button>
+        <button class="btn btn-outline-danger btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+    </div>
+    <div class="filter-panel" id="filterPanel" style="display:none">
+        <div class="filter-grid">
+            <div>
+                <label class="filter-label">Item Type</label>
+                <select id="f-type" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    @foreach (var t in Model.ItemTypes) { <option value="@t.ToLower()">@t</option> }
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Rarity</label>
+                <select id="f-rarity" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todas</option>
+                    @foreach (var r in Model.Rarities) { <option value="@r.ToLower()">@r</option> }
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Equipment Slot</label>
+                <select id="f-slot" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    @foreach (var s in Model.EquipmentSlots) { <option value="@s.ToLower()">@s</option> }
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Hold Type</label>
+                <select id="f-hold" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    @foreach (var h in Model.HoldTypes) { <option value="@h.ToLower()">@h</option> }
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Stackable</label>
+                <select id="f-stack" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Can Block</label>
+                <select id="f-block" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Weapon Data</label>
+                <select id="f-weapon" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="yes">Tiene</option>
+                    <option value="no">No tiene</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="items-list @(Model.FilteredItemId != null ? "item-detail-mode" : "")" id="itemsList">
+        @foreach (var item in Model.Items)
+        {
+            <div class="item-entry"
+                 data-id="@item.Id.ToLower()"
+                 data-name="@(item.Name?.ToLower() ?? "")"
+                 data-desc="@(item.Description?.ToLower() ?? "")"
+                 data-type="@(item.ItemType?.ToLower() ?? "")"
+                 data-rarity="@(item.ItemRarity?.ToLower() ?? "")"
+                 data-slot="@(item.EquipmentSlot?.ToLower() ?? "")"
+                 data-hold="@(item.HoldType?.ToLower() ?? "")"
+                 data-stack="@(item.IsStackable?.ToString().ToLower() ?? "")"
+                 data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
+                 data-weapon="@(item.WeaponData != null ? "yes" : "no")">
+                <!-- Header -->
+                <div class="item-entry-header">
+                    <div class="item-row-icon">
+                        @if (item.Icon != null)
+                        {
+                            <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(item.Icon)" />
+                        }
+                        else
+                        {
+                            <span class="no-icon">?</span>
+                        }
+                        <a class="item-row-id" href="/Items?itemId=@item.Id">@(item.Name ?? item.Id)</a>
+                    </div>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="enableEdit('@item.Id')">✏️ Editar</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btn-save-@item.Id" style="display:none" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-@item.Id" style="display:none" onclick="cancelEdit('@item.Id')">✕ Cancelar</button>
+                </div>
+
+                <!-- 4 cards -->
+                <form id="form-@item.Id" method="post" asp-page-handler="EditItem" enctype="multipart/form-data">
+                <input type="hidden" name="EditItem.Id" value="@item.Id" />
+                <input type="hidden" name="FilteredItemId" value="@Model.FilteredItemId" />
+                <div class="item-cards-row">
+
+                    <div class="icard">
+                        <div class="icard-header">📋 Item Basic Data</div>
+                        <div class="icard-body">
+                            <div class="ifield"><span class="ilabel">Item Name</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Name" value="@item.Name" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Description</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Description" value="@item.Description" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Item ID</span><span class="ivalue"><code>@item.Id</code></span></div>
+                            <div class="ifield">
+                                <span class="ilabel">Item Size</span>
+                                <span class="ivalue">@(item.Size != null ? $"X {item.Size.X}  Y {item.Size.Y}" : "-")</span>
+                            </div>
+                            <div class="ifield">
+                                <span class="ilabel">Is Stackable</span>
+                                <span class="ivalue">
+                                    <select class="form-select form-select-sm" name="EditItem.IsStackable" onchange="onInlineStackableChange(this, '@item.Id')" disabled>
+                                        <option value="">-</option>
+                                        <option value="true" selected="@(item.IsStackable == true ? "selected" : null)">Sí</option>
+                                        <option value="false" selected="@(item.IsStackable == false ? "selected" : null)">No</option>
+                                    </select>
+                                </span>
+                            </div>
+                            <div class="ifield"><span class="ilabel">Max Stack</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.MaxAmount" id="inlineMaxAmount-@item.Id" value="@item.MaxAmount" disabled @(item.IsStackable == false ? "readonly" : "") /></span></div>
+                            <div class="ifield">
+                                <span class="ilabel">Icon</span>
+                                <span class="ivalue" style="display:flex;align-items:center;gap:0.5rem">
+                                    @if (item.Icon != null)
+                                    {
+                                        <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(item.Icon)" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:2px" />
+                                    }
+                                    else
+                                    {
+                                        <span style="width:32px;height:32px;background:var(--border-subtle);border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-faint)">?</span>
+                                    }
+                                    <input type="file" id="icon-input-@item.Id" name="EditIcon" accept=".png,.jpg,.jpeg" style="display:none" />
+                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="icon-btn-@item.Id" style="display:none" onclick="document.getElementById('icon-input-@item.Id').click()">Cambiar</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">🗂️ Item Enums</div>
+                        <div class="icard-body">
+                            <div class="ifield"><span class="ilabel">Item Type</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.ItemType" onchange="onItemTypeChange(this, '@item.Id')" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var t in Model.ItemTypes) { <option value="@t" selected="@(item.ItemType == t ? "selected" : null)">@t</option> }
+                                </select>
+                            </span></div>
+                            <div class="ifield"><span class="ilabel">Item Rarity</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.ItemRarity" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var r in Model.Rarities) { <option value="@r" selected="@(item.ItemRarity == r ? "selected" : null)">@r</option> }
+                                </select>
+                            </span></div>
+                            <div class="ifield"><span class="ilabel">Item Sound</span><span class="ivalue">@(item.SoundType?.Sound ?? "-")</span></div>
+                            <div class="ifield" id="field-holdtype-@item.Id"><span class="ilabel">Hold Type</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.HoldType" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var h in Model.HoldTypes) { <option value="@h" selected="@(item.HoldType == h ? "selected" : null)">@h</option> }
+                                </select>
+                            </span></div>
+                            <div class="ifield" id="field-equipslot-@item.Id"><span class="ilabel">Equipment Slot</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.EquipmentSlot" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var s in Model.EquipmentSlots) { <option value="@s" selected="@(item.EquipmentSlot == s ? "selected" : null)">@s</option> }
+                                </select>
+                            </span></div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">🛒 Shop</div>
+                        <div class="icard-body">
+                            <div class="ifield"><span class="ilabel">Buy Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.BuyAmount" value="@item.BuyAmount" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Sell Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.SellAmount" value="@item.SellAmount" disabled /></span></div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">📊 Stats & Events</div>
+                        <div class="icard-body">
+                            @foreach (var sa in Model.StatsByItem[item.Id])
+                            {
+                                <div class="ifield">
+                                    <span class="ilabel">@(sa.StatNavigation?.Id ?? sa.Stat)</span>
+                                    <span class="ivalue d-flex align-items-center gap-2">
+                                        @(sa.Amount?.ToString() ?? "-")
+                                        <form method="post" asp-page-handler="DeleteStat" style="display:inline;margin:0">
+                                            <input type="hidden" name="id" value="@sa.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                        </form>
+                                    </span>
+                                </div>
+                            }
+                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                                <span class="ilabel" style="color:var(--text-muted)">+ Stat</span>
+                                <span class="ivalue">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAddStat('@item.Id')">+</button>
+                                </span>
+                            </div>
+                            <div style="border-top:1px solid var(--border-subtle);margin-top:0.5rem;padding-top:0.5rem">
+                                @foreach (var ie in Model.ItemEventsByItem[item.Id])
+                                {
+                                    <div class="ifield">
+                                        <span class="ilabel">@(ie.EventName ?? "-")</span>
+                                        <span class="ivalue d-flex align-items-center gap-2">
+                                            <span class="badge bg-secondary">@(ie.EventTypeNavigation?.Id ?? ie.EventType ?? "-")</span>
+                                            <form method="post" asp-page-handler="DeleteItemEvent" style="display:inline;margin:0">
+                                                <input type="hidden" name="id" value="@ie.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                            </form>
+                                        </span>
+                                    </div>
+                                }
+                                <div class="ifield" style="padding-top:0.5rem">
+                                    <span class="ilabel" style="color:var(--text-muted)">+ Event</span>
+                                    <span class="ivalue">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAddItemEvent('@item.Id')">+</button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">⚔️ Weapon Info</div>
+                        <div class="icard-body">
+                            <div class="ifield"><span class="ilabel">Weapon Data</span><span class="ivalue">@(item.Weapon != null ? $"DMG {item.Weapon.Damage} | Heavy {item.Weapon.Heaviness}" : "-")</span></div>
+                            <div class="ifield"><span class="ilabel">Can Block</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.CanBlock" onchange="onCanBlockChange(this, '@item.Id')" disabled>
+                                    <option value="">-</option>
+                                    <option value="true" selected="@(item.CanBlock == true ? "selected" : null)">Sí</option>
+                                    <option value="false" selected="@(item.CanBlock == false ? "selected" : null)">No</option>
+                                </select>
+                            </span></div>
+                            <div class="ifield" id="field-blockamount-@item.Id"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" disabled /></span></div>
+                            <div class="ifield" id="field-blocksound-@item.Id"><span class="ilabel">Block Sound</span><span class="ivalue"><input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled /></span></div>
+                            <div class="ifield" id="field-parryaudio-@item.Id"><span class="ilabel">Parry Audio</span><span class="ivalue"><input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" disabled /></span></div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">🔊 Inventory Sound</div>
+                        <div class="icard-body">
+                            <div class="ifield"><span class="ilabel">Sound Type</span><span class="ivalue">
+                                <select class="form-select form-select-sm" name="EditItem.ItemSoundType" disabled>
+                                    <option value="">-</option>
+                                    @foreach (var s in Model.InventorySounds) { <option value="@s.Id" selected="@(item.ItemSoundType == s.Id ? "selected" : null)">@s.Sound</option> }
+                                </select>
+                            </span></div>
+                        </div>
+                    </div>
+
+                    <div class="icard">
+                        <div class="icard-header">✨ Magic Data</div>
+                        <div class="icard-body">
+                            @foreach (var ma in Model.MagicAttacksByItem[item.Id])
+                            {
+                                var sounds = ma.HitSoundsNavigation?.Sounds;
+                                var soundIds = string.IsNullOrEmpty(sounds)
+                                    ? new List<long>()
+                                    : System.Text.Json.JsonSerializer.Deserialize<List<long>>(sounds) ?? new List<long>();
+                                <div class="magic-attack-row">
+                                    <span class="badge bg-secondary">@(ma.MagicTypeNavigation?.Id ?? ma.MagicType)</span>
+                                    <span>DMG: @(ma.MagicDamage?.ToString() ?? "-")</span>
+                                    <span>CD: @(ma.Cooldown?.ToString("0.##") ?? "-")</span>
+                                    <span>Mana: @(ma.ManaConsumption?.ToString() ?? "-")</span>
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="openEditMagicModal(@ma.Id, '@item.Id', '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString("0.##") ?? "null"), @(ma.ProjectileSpeed?.ToString("0.##") ?? "null"), '@(ma.EffectType ?? "")', @(ma.HitSounds?.ToString() ?? "null"), @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"))">✏️</button>
+                                    <form method="post" asp-page-handler="DeleteMagicAttack" style="display:inline">
+                                        <input type="hidden" name="id" value="@ma.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                                    </form>
+                                </div>
+                                if (soundIds.Any())
+                                {
+                                    <div class="hit-sounds-row">
+                                        <span class="ilabel">Hit Sounds</span>
+                                        @foreach (var sid in soundIds)
+                                        {
+                                            <span class="badge bg-dark border border-secondary me-1">
+                                                🔊 #@sid
+                                                <form method="post" asp-page-handler="RemoveHitSound" style="display:inline">
+                                                    <input type="hidden" name="magicAttackId" value="@ma.Id" />
+                                                    <input type="hidden" name="audioId" value="@sid" />
+                                                    <button type="submit" class="btn-close btn-close-white" style="font-size:0.5rem"></button>
+                                                </form>
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                <div class="hit-sounds-upload-row">
+                                    <form method="post" asp-page-handler="AddHitSound" enctype="multipart/form-data" style="display:flex;gap:0.4rem;align-items:center">
+                                        <input type="hidden" name="magicAttackId" value="@ma.Id" />
+                                        <input type="file" class="form-control form-control-sm" name="file" accept="audio/*" style="max-width:180px" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">+ Hit Sound</button>
+                                    </form>
+                                </div>
+                            }
+                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                                <span class="ilabel" style="color:var(--text-muted)">+ Attack</span>
+                                <span class="ivalue"><button type="button" class="btn btn-outline-success btn-sm" onclick="openAddMagicModal('@item.Id')">+</button></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                </form>
+                <!-- Icon upload (fuera del form de edición para evitar forms anidados) -->
+                <form class="upload-form d-none" id="upload-form-@item.Id" method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+                    <input type="hidden" name="itemId" value="@item.Id" />
+                    <input type="hidden" name="FilteredItemId" value="@Model.FilteredItemId" />
+                </form>
+            </div>
+        }
+    </div>
+    <!-- Sub-forms fuera de cualquier form para evitar anidamiento -->
+    <form id="addItemTypeForm" method="post" asp-page-handler="AddItemType" class="inline-add-form" style="display:none;position:absolute">
+        <input class="form-control form-control-sm" name="NewItemTypeValue" placeholder="Nuevo tipo..." required />
+        <button type="submit" class="btn btn-sm btn-success">✓</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addItemTypeForm')">✕</button>
+    </form>
+    <form id="addRarityForm" method="post" asp-page-handler="AddRarity" class="inline-add-form" style="display:none;position:absolute">
+        <input class="form-control form-control-sm" name="NewRarityValue" placeholder="Nueva rareza..." required />
+        <button type="submit" class="btn btn-sm btn-success">✓</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addRarityForm')">✕</button>
+    </form>
+    <form id="addHoldTypeForm" method="post" asp-page-handler="AddHoldType" class="inline-add-form" style="display:none;position:absolute">
+        <input class="form-control form-control-sm" name="NewHoldTypeValue" placeholder="Nuevo hold type..." required />
+        <button type="submit" class="btn btn-sm btn-success">✓</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addHoldTypeForm')">✕</button>
+    </form>
+    <form id="addEventTypeForm" method="post" asp-page-handler="AddEventType" class="inline-add-form" style="display:none;position:absolute">
+        <input class="form-control form-control-sm" name="NewEventTypeValue" placeholder="Nuevo event type..." required />
+        <button type="submit" class="btn btn-sm btn-success">✓</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleInline('addEventTypeForm')">✕</button>
+    </form>
+</div>
+
+<script>
+    const EQUIP_SLOT_TYPES = ['sword','bow','book','armor','shield','weapon','accesory'];
+    const HOLD_TYPES = ['sword','bow','book','shield'];
+
+    function applyFilters() {
+        const q = document.getElementById('itemSearch').value.toLowerCase();
+        const type = document.getElementById('f-type').value;
+        const rarity = document.getElementById('f-rarity').value;
+        const slot = document.getElementById('f-slot').value;
+        const hold = document.getElementById('f-hold').value;
+        const stack = document.getElementById('f-stack').value;
+        const block = document.getElementById('f-block').value;
+        const weapon = document.getElementById('f-weapon').value;
+        document.querySelectorAll('#itemsList .item-entry').forEach(c => {
+            const d = c.dataset;
+            const match =
+                (!q || d.id.includes(q) || d.name.includes(q) || d.desc.includes(q)) &&
+                (!type   || d.type   === type)   &&
+                (!rarity || d.rarity === rarity) &&
+                (!slot   || d.slot   === slot)   &&
+                (!hold   || d.hold   === hold)   &&
+                (!stack  || d.stack  === stack)  &&
+                (!block  || d.block  === block)  &&
+                (!weapon || d.weapon === weapon);
+            c.style.display = match ? '' : 'none';
+        });
+    }
+
+    function toggleFilters() {
+        const p = document.getElementById('filterPanel');
+        p.style.display = p.style.display === 'none' ? '' : 'none';
+    }
+
+    function clearFilters() {
+        document.getElementById('itemSearch').value = '';
+        ['f-type','f-rarity','f-slot','f-hold','f-stack','f-block','f-weapon'].forEach(id => document.getElementById(id).value = '');
+        applyFilters();
+    }
+
+    function onNewItemTypeChange(select) {
+        const val = select.value.toLowerCase();
+        document.getElementById('new-field-equipslot').style.display = EQUIP_SLOT_TYPES.includes(val) ? '' : 'none';
+        document.getElementById('new-field-holdtype').style.display = HOLD_TYPES.includes(val) ? '' : 'none';
+    }
+
+    function onNewCanBlockChange(select) {
+        const show = select.value === 'true';
+        document.getElementById('new-field-blockamount').style.display = show ? '' : 'none';
+        document.getElementById('new-field-blocksound').style.display = show ? '' : 'none';
+        document.getElementById('new-field-parryaudio').style.display = show ? '' : 'none';
+    }
+
+    function onItemTypeChange(select, itemId) {
+        const val = select.value.toLowerCase();
+        document.getElementById('field-equipslot-' + itemId).style.display = EQUIP_SLOT_TYPES.includes(val) ? '' : 'none';
+        document.getElementById('field-holdtype-' + itemId).style.display = HOLD_TYPES.includes(val) ? '' : 'none';
+    }
+
+    function onCanBlockChange(select, itemId) {
+        const show = select.value === 'true';
+        document.getElementById('field-blockamount-' + itemId).style.display = show ? '' : 'none';
+        document.getElementById('field-blocksound-' + itemId).style.display = show ? '' : 'none';
+        document.getElementById('field-parryaudio-' + itemId).style.display = show ? '' : 'none';
+    }
+
+    function applyVisibility(itemId) {
+        const form = document.getElementById('form-' + itemId);
+        const itemType = form.querySelector('[name="EditItem.ItemType"]').value.toLowerCase();
+        const canBlock = form.querySelector('[name="EditItem.CanBlock"]').value;
+        document.getElementById('field-equipslot-' + itemId).style.display = EQUIP_SLOT_TYPES.includes(itemType) ? '' : 'none';
+        document.getElementById('field-holdtype-' + itemId).style.display = HOLD_TYPES.includes(itemType) ? '' : 'none';
+        document.getElementById('field-blockamount-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
+        document.getElementById('field-blocksound-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
+        document.getElementById('field-parryaudio-' + itemId).style.display = canBlock === 'true' ? '' : 'none';
+    }
+
+    function enableEdit(itemId) {
+        const form = document.getElementById('form-' + itemId);
+        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = false);
+        applyVisibility(itemId);
+        document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = 'none';
+        document.getElementById('btn-save-' + itemId).style.display = '';
+        document.getElementById('btn-cancel-' + itemId).style.display = '';
+        document.getElementById('icon-btn-' + itemId).style.display = '';
+    }
+
+    function cancelEdit(itemId) {
+        const form = document.getElementById('form-' + itemId);
+        form.reset();
+        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = true);
+        applyVisibility(itemId);
+        document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = '';
+        document.getElementById('btn-save-' + itemId).style.display = 'none';
+        document.getElementById('btn-cancel-' + itemId).style.display = 'none';
+        document.getElementById('icon-btn-' + itemId).style.display = 'none';
+        document.getElementById('icon-input-' + itemId).value = '';
+    }
+
+    function onInlineStackableChange(select, itemId) {
+        const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
+        if (select.value === 'false') {
+            maxAmount.value = 1;
+            maxAmount.readOnly = true;
+            maxAmount.style.backgroundColor = '#2a2d3e';
+        } else {
+            maxAmount.readOnly = false;
+            maxAmount.style.backgroundColor = '';
+        }
+    }
+
+    function onStackableChange(select) {
+        const maxAmount = document.getElementById('maxAmount');
+        if (select.value === 'false') {
+            maxAmount.value = 1;
+            maxAmount.readOnly = true;
+            maxAmount.style.backgroundColor = '#2a2d3e';
+        } else {
+            maxAmount.readOnly = false;
+            maxAmount.style.backgroundColor = '';
+        }
+    }
+
+    function toggleAddItemEvent(itemId) {
+        document.getElementById('addItemEventItemId').value = itemId;
+        document.getElementById('addItemEventModal').style.display = 'flex';
+    }
+
+    function toggleAddStat(itemId) {
+        document.getElementById('addStatItemId').value = itemId;
+        document.getElementById('addStatModal').style.display = 'flex';
+    }
+
+    function openAddMagicModal(itemId) {
+        document.getElementById('addMagicItemId').value = itemId;
+        document.getElementById('addMagicModal').style.display = 'flex';
+    }
+
+    function openEditMagicModal(id, itemId, magicType, damage, cooldown, projSpeed, effectType, hitSounds, mana, companions) {
+        document.getElementById('editMagicId').value = id;
+        document.getElementById('editMagicItemId').value = itemId;
+        document.getElementById('editMagicType').value = magicType ?? '';
+        document.getElementById('editMagicDamage').value = damage ?? '';
+        document.getElementById('editMagicCooldown').value = cooldown ?? '';
+        document.getElementById('editMagicProjectileSpeed').value = projSpeed ?? '';
+        document.getElementById('editMagicEffectType').value = effectType ?? '';
+        document.getElementById('editMagicMana').value = mana ?? '';
+        document.getElementById('editMagicCompanions').value = companions ?? '';
+        document.getElementById('editMagicModal').style.display = 'flex';
+    }
+
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el));
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[id^="form-"]').forEach(form => {
+            const itemId = form.id.replace('form-', '');
+            applyVisibility(itemId);
+        });
+        // Inject FilteredItemId into all forms that don't already have it
+        const filteredItemId = '@Model.FilteredItemId';
+        document.querySelectorAll('form').forEach(form => {
+            if (!form.querySelector('[name="FilteredItemId"]')) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'FilteredItemId';
+                input.value = filteredItemId;
+                form.appendChild(input);
+            }
+        });
+    });
+
+    function toggleInline(id, anchorEl) {
+        const form = document.getElementById(id);
+        const isHidden = form.style.display === 'none' || form.style.display === '';
+        form.style.display = isHidden ? 'flex' : 'none';
+        if (isHidden && anchorEl) {
+            const rect = anchorEl.closest('.input-group, .mb-3').getBoundingClientRect();
+            form.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+            form.style.left = rect.left + 'px';
+            form.style.zIndex = '2000';
+            form.querySelector('input').focus();
+        }
+    }
+
+    function toggleWeaponRow(id) {
+        const row = document.getElementById(id);
+        row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function openEditWeaponModal(id, itemId, damage, heaviness, ammo) {
+        document.getElementById('editWeaponId').value = id;
+        document.getElementById('editWeaponItemId').value = itemId;
+        document.getElementById('editWeaponIdDisplay').value = id;
+        document.getElementById('editWeaponItemIdDisplay').value = itemId;
+        document.getElementById('editWeaponDamage').value = damage ?? '';
+        document.getElementById('editWeaponHeaviness').value = heaviness ?? '';
+        document.getElementById('editWeaponAmmo').value = ammo ?? '';
+        document.getElementById('editWeaponModal').style.display = 'flex';
+    }
+</script>

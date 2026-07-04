@@ -1,0 +1,138 @@
+@page
+@model LootTablesModel
+@{
+    ViewData["Title"] = "Loot Tables";
+}
+
+<link rel="stylesheet" href="~/css/items.css" />
+<link rel="stylesheet" href="~/css/loottables.css" />
+
+<div class="items-page">
+    <div class="items-header">
+        <h1>🎲 Loot Tables</h1>
+        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addTableModal').style.display='flex'">+ Nueva Loot Table</button>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="ltSearch" class="form-control" placeholder="Buscar por nombre..." />
+    </div>
+
+    <!-- Modal Nueva Loot Table -->
+    <div id="addTableModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>🎲 Nueva Loot Table</h4>
+            <form method="post" asp-page-handler="AddTable">
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input class="form-control" name="NewTableName" placeholder="Nombre de la loot table..." required />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Crear</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addTableModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Entry -->
+    <div id="addEntryModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>➕ Añadir Entrada</h4>
+            <form method="post" asp-page-handler="AddEntry">
+                <input type="hidden" id="addEntryTableId" name="NewEntry.LootTableId" />
+                <div class="mb-3">
+                    <label>Item</label>
+                    <select class="form-select" name="NewEntry.ItemId" required>
+                        <option value="">-</option>
+                        @foreach (var item in Model.AllItems)
+                        {
+                            <option value="@item.Id">@(item.Name ?? item.Id)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Probability (%)</label>
+                    <input class="form-control" type="number" name="NewEntry.Probability" min="0" max="100" />
+                </div>
+                <div class="mb-3">
+                    <label>Min Amount</label>
+                    <input class="form-control" type="number" name="NewEntry.MinAmount" min="1" />
+                </div>
+                <div class="mb-3">
+                    <label>Max Amount</label>
+                    <input class="form-control" type="number" name="NewEntry.MaxAmount" min="1" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addEntryModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="lt-list" id="ltList">
+        @foreach (var table in Model.LootTables)
+        {
+            <div class="lt-entry" data-name="@((table.LootTableName ?? "").ToLower())">
+                <div class="lt-header">
+                    <span class="lt-id">@(table.LootTableName ?? $"Loot Table #{table.Id}")</span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="openAddEntry(@table.Id)">+ Entrada</button>
+                        <form method="post" asp-page-handler="DeleteTable" style="margin:0">
+                            <input type="hidden" name="id" value="@table.Id" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="lt-entries">
+                    @if (!table.Entries.Any())
+                    {
+                        <span class="lt-empty">Sin entradas</span>
+                    }
+                    else
+                    {
+                        <div class="lt-entries-header">
+                            <span>Item</span>
+                            <span>Probability</span>
+                            <span>Min</span>
+                            <span>Max</span>
+                            <span></span>
+                        </div>
+                        @foreach (var entry in table.Entries)
+                        {
+                            <div class="lt-entry-row">
+                                <span class="lt-item-name">
+                                    @if (entry.Item?.Icon != null)
+                                    {
+                                        <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(entry.Item.Icon)" class="lt-item-icon" />
+                                    }
+                                    @(entry.Item?.Name ?? entry.ItemId)
+                                </span>
+                                <span>@(entry.Probability?.ToString() ?? "-")%</span>
+                                <span>@(entry.MinAmount?.ToString() ?? "-")</span>
+                                <span>@(entry.MaxAmount?.ToString() ?? "-")</span>
+                                <form method="post" asp-page-handler="DeleteEntry" style="margin:0">
+                                    <input type="hidden" name="id" value="@entry.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                </form>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function openAddEntry(tableId) {
+        document.getElementById('addEntryTableId').value = tableId;
+        document.getElementById('addEntryModal').style.display = 'flex';
+    }
+
+    document.getElementById('ltSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#ltList .lt-entry').forEach(el => {
+            el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
+        });
+    });
+</script>

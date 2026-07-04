@@ -1,0 +1,200 @@
+@page
+@model RecipesModel
+@{
+    ViewData["Title"] = "Recipes";
+}
+
+<link rel="stylesheet" href="~/css/items.css" />
+<link rel="stylesheet" href="~/css/recipes.css" />
+
+<div class="items-page">
+    <div class="items-header">
+        <h1>📜 Recipes</h1>
+        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addRecipeModal').style.display='flex'">+ Nueva Recipe</button>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="recipeSearch" class="form-control" placeholder="Buscar por nombre..." />
+    </div>
+
+    <!-- Modal Nueva Recipe -->
+    <div id="addRecipeModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>📜 Nueva Recipe</h4>
+            <form method="post" asp-page-handler="AddRecipe">
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input class="form-control" name="NewRecipeName" placeholder="Nombre de la recipe..." required />
+                </div>
+                <div class="mb-3">
+                    <label>Coste</label>
+                    <input class="form-control" type="number" name="NewRecipeCost" />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Crear</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addRecipeModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Input Item -->
+    <div id="addInputModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>➕ Añadir Input Item</h4>
+            <form method="post" asp-page-handler="AddInputItem">
+                <input type="hidden" id="inputRecipeId" name="TargetRecipeId" />
+                <div class="mb-3">
+                    <label>Item</label>
+                    <select class="form-select" name="InputItemId" required>
+                        <option value="">-</option>
+                        @foreach (var item in Model.AllItems)
+                        {
+                            <option value="@item.Id">@(item.Name ?? item.Id)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Amount</label>
+                    <input class="form-control" type="number" name="InputItemAmount" value="1" min="1" required />
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Añadir</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addInputModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add Output Item -->
+    <div id="addOutputModal" class="modal-overlay">
+        <div class="modal-card">
+            <h4>➕ Añadir Output Item</h4>
+            <form method="post" asp-page-handler="AddOutputItem">
+                <input type="hidden" id="outputRecipeId" name="TargetRecipeId" />
+                <div class="mb-3">
+                    <label>Item</label>
+                    <select class="form-select" name="OutputItemId" required>
+                        <option value="">-</option>
+                        @foreach (var item in Model.AllItems)
+                        {
+                            <option value="@item.Id">@(item.Name ?? item.Id)</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer-btns">
+                    <button type="submit" class="btn btn-success">Añadir</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('addOutputModal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="recipe-list" id="recipeList">
+        @foreach (var recipe in Model.Recipes)
+        {
+            var inputItems = Model.ParseInputItems(recipe.InputItems);
+            var outputItems = Model.ParseOutputItems(recipe.OutputItems);
+
+            <div class="recipe-entry" data-name="@recipe.RecipeName.ToLower()">
+                <div class="recipe-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="recipe-name">@recipe.RecipeName</span>
+                        @if (recipe.RecipeCost.HasValue)
+                        {
+                            <span class="badge bg-warning text-dark">💰 @recipe.RecipeCost</span>
+                        }
+                    </div>
+                    <form method="post" asp-page-handler="DeleteRecipe" style="margin:0">
+                        <input type="hidden" name="id" value="@recipe.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
+                    </form>
+                </div>
+
+                <div class="recipe-body">
+                    <!-- Input Items -->
+                    <div class="recipe-section">
+                        <div class="recipe-section-header">
+                            <span>🔧 Input Items</span>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="openInputModal(@recipe.Id)">+</button>
+                        </div>
+                        @if (!inputItems.Any())
+                        {
+                            <span class="recipe-empty">Sin items de entrada</span>
+                        }
+                        else
+                        {
+                            @foreach (var input in inputItems)
+                            {
+                                var inputItem = Model.ItemsById.GetValueOrDefault(input.ItemId);
+                                <div class="recipe-item-row">
+                                    @if (inputItem?.Icon != null)
+                                    {
+                                        <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(inputItem.Icon)" class="recipe-item-icon" />
+                                    }
+                                    <span class="recipe-item-name">@(inputItem?.Name ?? input.ItemId)</span>
+                                    <span class="badge bg-secondary">x@(input.Amount)</span>
+                                    <form method="post" asp-page-handler="RemoveInputItem" style="margin:0">
+                                        <input type="hidden" name="recipeId" value="@recipe.Id" />
+                                        <input type="hidden" name="itemId" value="@input.ItemId" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                    </form>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="recipe-arrow">➜</div>
+
+                    <!-- Output Items -->
+                    <div class="recipe-section">
+                        <div class="recipe-section-header">
+                            <span>✅ Output Items</span>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="openOutputModal(@recipe.Id)">+</button>
+                        </div>
+                        @if (!outputItems.Any())
+                        {
+                            <span class="recipe-empty">Sin items de salida</span>
+                        }
+                        else
+                        {
+                            @foreach (var outId in outputItems)
+                            {
+                                var outItem = Model.ItemsById.GetValueOrDefault(outId);
+                                <div class="recipe-item-row">
+                                    @if (outItem?.Icon != null)
+                                    {
+                                        <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(outItem.Icon)" class="recipe-item-icon" />
+                                    }
+                                    <span class="recipe-item-name">@(outItem?.Name ?? outId)</span>
+                                    <form method="post" asp-page-handler="RemoveOutputItem" style="margin:0">
+                                        <input type="hidden" name="recipeId" value="@recipe.Id" />
+                                        <input type="hidden" name="itemId" value="@outId" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                    </form>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function openInputModal(recipeId) {
+        document.getElementById('inputRecipeId').value = recipeId;
+        document.getElementById('addInputModal').style.display = 'flex';
+    }
+    function openOutputModal(recipeId) {
+        document.getElementById('outputRecipeId').value = recipeId;
+        document.getElementById('addOutputModal').style.display = 'flex';
+    }
+
+    document.getElementById('recipeSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#recipeList .recipe-entry').forEach(el => {
+            el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
+        });
+    });
+</script>
