@@ -182,10 +182,25 @@ public class DataApiController(AppDbContext db) : ControllerBase
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
+            var recipeIds = new List<long>();
+            foreach (var r in dto.Recipes ?? [])
+            {
+                var recipe = new Models.Recipe
+                {
+                    RecipeName = r.Name,
+                    RecipeCost = r.RecipeCost,
+                    InputItems = JsonSerializer.Serialize(r.InputItems ?? []),
+                    OutputItems = JsonSerializer.Serialize(r.OutputItems ?? [])
+                };
+                db.Recipes.Add(recipe);
+                await db.SaveChangesAsync();
+                recipeIds.Add(recipe.Id);
+            }
+
             var shop = new Models.NpcShop
             {
                 LootTableId = dto.LootTableId,
-                Recipes = JsonSerializer.Serialize(dto.RecipeIds ?? [])
+                Recipes = JsonSerializer.Serialize(recipeIds)
             };
             db.NpcsShop.Add(shop);
             await db.SaveChangesAsync();
