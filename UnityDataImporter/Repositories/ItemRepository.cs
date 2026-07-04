@@ -72,11 +72,19 @@ public class ItemRepository(AppDbContext db)
             var audio = await UpsertAudio(existing?.BlockSounds, blockSoundBytes);
             item.BlockSounds = audio.Id;
         }
+        else
+        {
+            item.BlockSounds = existing?.BlockSounds;
+        }
 
         if (parryAudioBytes is { Length: > 0 })
         {
             var audio = await UpsertAudio(existing?.ParryAudio, parryAudioBytes);
             item.ParryAudio = audio.Id;
+        }
+        else
+        {
+            item.ParryAudio = existing?.ParryAudio;
         }
     }
 
