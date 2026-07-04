@@ -125,7 +125,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
                     JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
                     JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
                     r.RecipeCost));
-            return new NpcShopDto(s.Id, recipes, s.LootTable?.LootTableName, s.LootTable?.LootTableName);
+            return new NpcShopDto(s.Id, s.Name, recipes, s.LootTable?.LootTableName, s.LootTable?.LootTableName);
         }));
     }
 
@@ -214,6 +214,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             var lootTable = dto.LootTableId is not null ? await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.LootTableId) : null;
             var shop = new Models.NpcShop
             {
+                Name = dto.Name,
                 LootTableId = lootTable?.Id,
                 Recipes = JsonSerializer.Serialize(recipeIds)
             };
@@ -223,6 +224,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             var createdRecipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
             return CreatedAtAction(nameof(GetAllNpcShops), new { id = shop.Id }, new NpcShopDto(
                 shop.Id,
+                shop.Name,
                 createdRecipes.Select(r => new RecipeDto(
                     r.Id, r.RecipeName,
                     JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],

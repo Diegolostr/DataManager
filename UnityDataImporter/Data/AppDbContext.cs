@@ -254,6 +254,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Recipes).HasColumnName("recipes").HasColumnType("jsonb");
             e.Property(x => x.LootTableId).HasColumnName("lootTableId");
+            e.Property(x => x.Name).HasColumnName("name");
             e.HasOne(x => x.LootTable).WithMany().HasForeignKey(x => x.LootTableId).IsRequired(false);
         });
 
