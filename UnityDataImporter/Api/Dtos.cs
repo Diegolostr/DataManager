@@ -41,7 +41,7 @@ public record LootTableEntryDto(long Id, string ItemId, int? Probability, int? M
 
 public record LootTableDto(long Id, string? Name, IEnumerable<LootTableEntryDto> Entries);
 
-public record RecipeDto(long Id, string Name, string? InputItems, string? OutputItems, int? RecipeCost);
+public record RecipeDto(long Id, string Name, IEnumerable<CreateRecipeInputItemDto> InputItems, IEnumerable<string> OutputItems, int? RecipeCost);
 
 public record NpcShopDto(long Id, string Recipes, long? LootTableId, string? LootTableName);
 

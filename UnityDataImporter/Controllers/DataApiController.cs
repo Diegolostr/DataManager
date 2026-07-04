@@ -88,7 +88,11 @@ public class DataApiController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> GetAllRecipes()
     {
         var recipes = await db.Recipes.ToListAsync();
-        return Ok(recipes.Select(r => new RecipeDto(r.Id, r.RecipeName, r.InputItems, r.OutputItems, r.RecipeCost)));
+        return Ok(recipes.Select(r => new RecipeDto(
+            r.Id, r.RecipeName,
+            JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
+            JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
+            r.RecipeCost)));
     }
 
     // GET /api/loottables
@@ -158,7 +162,11 @@ public class DataApiController(AppDbContext db) : ControllerBase
             db.Recipes.Add(recipe);
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-            return CreatedAtAction(nameof(GetAllRecipes), new { id = recipe.Id }, new RecipeDto(recipe.Id, recipe.RecipeName, recipe.InputItems, recipe.OutputItems, recipe.RecipeCost));
+            return CreatedAtAction(nameof(GetAllRecipes), new { id = recipe.Id }, new RecipeDto(
+                recipe.Id, recipe.RecipeName,
+                dto.InputItems ?? [],
+                dto.OutputItems ?? [],
+                recipe.RecipeCost));
         }
         catch (Exception ex)
         {
