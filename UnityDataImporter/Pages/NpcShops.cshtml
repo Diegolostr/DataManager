@@ -96,7 +96,7 @@
                     <span class="shop-id">Shop #@shop.Id</span>
                     <div class="d-flex align-items-center gap-2">
                         <span class="shop-lt-badge">
-                            🎲 @(shop.LootTable?.LootTableName ?? (shop.LootTableId.HasValue ? $"#{shop.LootTableId}" : "Sin loot table"))
+                            🎲 @(shop.LootTable?.LootTableName ?? shop.LootTableId ?? "Sin loot table")
                         </span>
                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openEditLt(@shop.Id)">✏️</button>
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="openAddRecipe(@shop.Id)">+ Recipe</button>

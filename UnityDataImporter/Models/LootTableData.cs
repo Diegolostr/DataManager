@@ -10,4 +10,5 @@ public class LootTableData
     public string? LootTableId { get; set; }
 
     public Item? Item { get; set; }
+    public LootTable? LootTable { get; set; }
 }
