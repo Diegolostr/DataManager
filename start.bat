@@ -1,4 +1,6 @@
 @echo off
+timeout /t 30 /nobreak >nul
+
 cd /d "C:\Users\dlopezst\source\repos\UnityDataImporter"
 
 :wait
@@ -9,3 +11,9 @@ if errorlevel 1 (
 )
 
 docker compose up -d
+
+$action = New-ScheduledTaskAction -Execute "C:\Users\dlopezst\source\repos\UnityDataImporter\start.bat"
+$trigger = New-ScheduledTaskTrigger -AtLogon
+$trigger.Delay = "PT1M"
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
+Register-ScheduledTask -TaskName "UnityDataImporter" -Action $action -Trigger $trigger -Settings $settings -RunLevel Highest -Force
