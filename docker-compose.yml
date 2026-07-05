@@ -26,7 +26,7 @@ services:
       ASPNETCORE_Kestrel__Certificates__Default__Path: "/certs/unity-datamanager.tailfff421.ts.net.crt"
       ASPNETCORE_Kestrel__Certificates__Default__KeyPath: "/certs/unity-datamanager.tailfff421.ts.net.key"
     volumes:
-      - C:\Users\dlopezst\source\repos\UnityDataImporter\certs:/certs:ro
+      - C:\Users\Diego-Portatil\source\DataManager\certs:/certs:ro
     depends_on:
       - db
 

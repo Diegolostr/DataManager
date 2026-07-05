@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\dlopezst\source\repos\UnityDataImporter"
+cd /d "C:\Users\Diego-Portatil\source\DataManager"
 
 :wait
 docker info >nul 2>&1
