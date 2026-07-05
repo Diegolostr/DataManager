@@ -651,6 +651,15 @@
         return pending[itemId];
     }
 
+    function bufToBase64(buf) {
+        const bytes = new Uint8Array(buf);
+        let b64 = '';
+        const chunk = 8192;
+        for (let i = 0; i < bytes.length; i += chunk)
+            b64 += String.fromCharCode(...bytes.subarray(i, i + chunk));
+        return btoa(b64);
+    }
+
     // ── Description editor ───────────────────────────────────────────────
     let _descItemId = null;
     function openDescEditor(itemId) {
@@ -838,8 +847,7 @@
         const hitSoundsBytes = [];
         for (const file of files) {
             const buf = await file.arrayBuffer();
-            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-            hitSoundsBytes.push(b64);
+            hitSoundsBytes.push(bufToBase64(buf));
         }
         const entry = {
             id: editId,
@@ -907,7 +915,7 @@
         const b64List = [];
         for (const file of files) {
             const buf = await file.arrayBuffer();
-            b64List.push(btoa(String.fromCharCode(...new Uint8Array(buf))));
+            b64List.push(bufToBase64(buf));
         }
         getState(itemId).animations = b64List.length > 0 ? b64List : null;
         document.getElementById('anim-preview-' + itemId).textContent = b64List.length > 0 ? `🖼️ ${b64List.length} sprite(s) seleccionado(s)` : '';
