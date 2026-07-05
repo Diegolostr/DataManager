@@ -22,6 +22,7 @@ public class Item
     public string? EquipmentSlot { get; set; }
     public long? ItemSoundType { get; set; }
     public string? HoldType { get; set; }
+    public string? ItemAnimations { get; set; }
 
     public WeaponData? Weapon { get; set; }
     public Vector2? Size { get; set; }

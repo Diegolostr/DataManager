@@ -36,7 +36,8 @@ public record ItemDto(
     IEnumerable<MagicAttackDto> MagicAttacks,
     ItemAudioDto? BlockSounds,
     ItemAudioDto? ParryAudio,
-    Vector2Dto? Size);
+    Vector2Dto? Size,
+    IEnumerable<byte[]>? ItemAnimations);
 
 public record LootTableEntryDto(long Id, string ItemId, int? Probability, int? MinAmount, int? MaxAmount);
 
@@ -85,4 +86,5 @@ public record CreateItemDto(
     IEnumerable<CreateMagicAttackDto>? MagicAttacks,
     CreateItemAudioDto? BlockSounds,
     CreateItemAudioDto? ParryAudio,
-    Vector2Dto? Size);
+    Vector2Dto? Size,
+    IEnumerable<byte[]>? ItemAnimations = null);

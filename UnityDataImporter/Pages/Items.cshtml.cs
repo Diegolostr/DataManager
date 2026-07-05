@@ -48,6 +48,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     [BindProperty] public string? DeletedStatsJson { get; set; }
     [BindProperty] public string? DeletedEventsJson { get; set; }
     [BindProperty] public string? DeletedMagicJson { get; set; }
+    [BindProperty] public string? PendingAnimationsJson { get; set; }
     [BindProperty] public string? EditItemId { get; set; }
 
     public async Task OnGetAsync(string? itemId)
@@ -210,6 +211,21 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
                     ManaConsumption = pm.ManaConsumption, MaxCompanions = pm.MaxCompanions,
                     HitSounds = pm.HitSounds is not null ? JsonSerializer.Serialize(pm.HitSounds.Select(Convert.FromBase64String)) : null
                 });
+            }
+        }
+
+        // 9. Animations
+        if (!string.IsNullOrWhiteSpace(PendingAnimationsJson))
+        {
+            var b64List = JsonSerializer.Deserialize<List<string>>(PendingAnimationsJson);
+            if (b64List is { Count: > 0 })
+            {
+                var item = await db.Items.FindAsync(itemId);
+                if (item is not null)
+                {
+                    item.ItemAnimations = JsonSerializer.Serialize(b64List.Select(Convert.FromBase64String));
+                    await db.SaveChangesAsync();
+                }
             }
         }
 

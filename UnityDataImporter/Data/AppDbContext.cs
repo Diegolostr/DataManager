@@ -64,6 +64,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.EquipmentSlot).HasColumnName("equipmentSlot");
             e.Property(x => x.ItemSoundType).HasColumnName("itemSoundType");
             e.Property(x => x.HoldType).HasColumnName("holdType");
+            e.Property(x => x.ItemAnimations).HasColumnName("itemAnimations").HasColumnType("jsonb");
 
             e.HasOne(x => x.Weapon).WithOne(w => w.Item).HasForeignKey<WeaponData>(w => w.ItemId).IsRequired(false);
             e.HasOne(x => x.Size).WithMany().HasForeignKey(x => x.ItemSize);

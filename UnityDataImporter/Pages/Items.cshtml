@@ -333,6 +333,7 @@
                 <input type="hidden" name="PendingWeaponJson" id="pendingWeapon-@item.Id" value="" />
                 <input type="hidden" name="PendingMagicJson" id="pendingMagic-@item.Id" value="[]" />
                 <input type="hidden" name="DeletedMagicJson" id="deletedMagic-@item.Id" value="[]" />
+                <input type="hidden" name="PendingAnimationsJson" id="pendingAnimations-@item.Id" value="" />
                 <div class="item-cards-row">
 
                     <div class="icard">
@@ -354,6 +355,22 @@
                                 </span>
                             </div>
                             <div class="ifield"><span class="ilabel">Max Stack</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.MaxAmount" id="inlineMaxAmount-@item.Id" value="@item.MaxAmount" disabled @(item.IsStackable == false ? "readonly" : "") /></span></div>
+                            <div class="ifield">
+                                <span class="ilabel">Animations</span>
+                                <span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                                    @if (item.ItemAnimations != null)
+                                    {
+                                        var animCount = System.Text.Json.JsonSerializer.Deserialize<List<byte[]>>(item.ItemAnimations)?.Count ?? 0;
+                                        if (animCount > 0)
+                                        {
+                                            <span style="font-size:0.75rem;color:var(--text-muted)">🖼️ @animCount sprite(s) guardado(s)</span>
+                                        }
+                                    }
+                                    <input type="file" class="form-control form-control-sm" id="anim-input-@item.Id" multiple accept="image/*" style="display:none" onchange="onAnimationsChange('@item.Id')" />
+                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="anim-btn-@item.Id" style="display:none" onclick="document.getElementById('anim-input-@item.Id').click()">Cambiar sprites</button>
+                                    <span id="anim-preview-@item.Id" style="font-size:0.75rem;color:var(--text-muted)"></span>
+                                </span>
+                            </div>
                             <div class="ifield">
                                 <span class="ilabel">Icon</span>
                                 <span class="ivalue" style="display:flex;align-items:center;gap:0.5rem">
@@ -575,7 +592,7 @@
     // ── Pending state per item ──────────────────────────────────────────────
     const pending = {};
     function getState(itemId) {
-        if (!pending[itemId]) pending[itemId] = { stats: [], deletedStats: [], events: [], deletedEvents: [], weapon: null, magic: [], deletedMagic: [] };
+        if (!pending[itemId]) pending[itemId] = { stats: [], deletedStats: [], events: [], deletedEvents: [], weapon: null, magic: [], deletedMagic: [], animations: null };
         return pending[itemId];
     }
 
@@ -738,6 +755,18 @@
         el.remove();
     }
 
+    async function onAnimationsChange(itemId) {
+        const files = document.getElementById('anim-input-' + itemId).files;
+        const b64List = [];
+        for (const file of files) {
+            const buf = await file.arrayBuffer();
+            b64List.push(btoa(String.fromCharCode(...new Uint8Array(buf))));
+        }
+        getState(itemId).animations = b64List.length > 0 ? b64List : null;
+        document.getElementById('anim-preview-' + itemId).textContent = b64List.length > 0 ? `🖼️ ${b64List.length} sprite(s) seleccionado(s)` : '';
+        syncHidden(itemId);
+    }
+
     // ── Sync hidden inputs ──────────────────────────────────────────────────
     function syncHidden(itemId) {
         const s = getState(itemId);
@@ -748,6 +777,7 @@
         document.getElementById('pendingWeapon-' + itemId).value = s.weapon ? JSON.stringify(s.weapon) : '';
         document.getElementById('pendingMagic-' + itemId).value = JSON.stringify(s.magic.map(({id, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds}) => ({id: id||0, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds: hitSounds ?? null})));
         document.getElementById('deletedMagic-' + itemId).value = JSON.stringify(s.deletedMagic);
+        document.getElementById('pendingAnimations-' + itemId).value = s.animations ? JSON.stringify(s.animations) : '';
     }
 
     // ── Filters ─────────────────────────────────────────────────────────────
@@ -829,6 +859,7 @@
         document.getElementById('btn-save-' + itemId).style.display = '';
         document.getElementById('btn-cancel-' + itemId).style.display = '';
         document.getElementById('icon-btn-' + itemId).style.display = '';
+        document.getElementById('anim-btn-' + itemId).style.display = '';
     }
     function cancelEdit(itemId) {
         const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
@@ -843,6 +874,9 @@
         document.getElementById('btn-cancel-' + itemId).style.display = 'none';
         document.getElementById('icon-btn-' + itemId).style.display = 'none';
         document.getElementById('icon-input-' + itemId).value = '';
+        document.getElementById('anim-btn-' + itemId).style.display = 'none';
+        document.getElementById('anim-input-' + itemId).value = '';
+        document.getElementById('anim-preview-' + itemId).textContent = '';
         location.reload();
     }
     function onInlineStackableChange(select, itemId) {
