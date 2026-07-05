@@ -504,12 +504,22 @@
                             <div id="magic-list-@item.Id">
                             @foreach (var ma in Model.MagicAttacksByItem[item.Id])
                             {
+                                var maHitSounds = ma.HitSounds != null
+                                    ? System.Text.Json.JsonSerializer.Deserialize<List<byte[]>>(ma.HitSounds)
+                                    : null;
+                                var maHitSoundsB64 = maHitSounds != null
+                                    ? "[" + string.Join(",", maHitSounds.Select(b => $"'{Convert.ToBase64String(b)}'")) + "]"
+                                    : "null";
                                 <div class="magic-attack-row" data-magic-id="@ma.Id">
                                     <span class="badge bg-secondary">@(ma.MagicTypeNavigation?.Id ?? ma.MagicType)</span>
                                     <span>DMG: @(ma.MagicDamage?.ToString() ?? "-")</span>
                                     <span>CD: @(ma.Cooldown?.ToString("0.##") ?? "-")</span>
                                     <span>Mana: @(ma.ManaConsumption?.ToString() ?? "-")</span>
-                                    <button type="button" class="btn btn-outline-info btn-sm edit-only" onclick="openEditMagic('@item.Id', @ma.Id, '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(ma.ProjectileSpeed?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), '@(ma.EffectType ?? "")', @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"))">✏️</button>
+                                    @if (maHitSounds is { Count: > 0 })
+                                    {
+                                        <span>🔊 @maHitSounds.Count</span>
+                                    }
+                                    <button type="button" class="btn btn-outline-info btn-sm edit-only" onclick="openEditMagic('@item.Id', @ma.Id, '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(ma.ProjectileSpeed?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), '@(ma.EffectType ?? "")', @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"), @maHitSoundsB64)">✏️</button>
                                     <button type="button" class="btn btn-outline-danger btn-sm edit-only" onclick="deleteMagic('@item.Id', @ma.Id, this.closest('.magic-attack-row'))">🗑️</button>
                                 </div>
                             }
@@ -651,16 +661,19 @@
 
     // ── Magic ───────────────────────────────────────────────────────────────
     let _magicItemId = null;
+    let _editMagicExistingHitSounds = null;
     function openAddMagic(itemId) {
         _magicItemId = itemId;
         document.getElementById('magicModalEditId').value = '0';
         ['mMagicType','mDamage','mCooldown','mProjSpeed','mEffectType','mMana','mCompanions'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('mHitSounds').value = '';
         document.getElementById('mHitSoundsPreview').innerHTML = '';
+        _editMagicExistingHitSounds = null;
         document.getElementById('addMagicModal').style.display = 'flex';
     }
-    function openEditMagic(itemId, id, magicType, damage, cooldown, projSpeed, effectType, mana, companions) {
+    function openEditMagic(itemId, id, magicType, damage, cooldown, projSpeed, effectType, mana, companions, existingHitSounds) {
         _magicItemId = itemId;
+        _editMagicExistingHitSounds = existingHitSounds ?? null;
         document.getElementById('magicModalEditId').value = id;
         document.getElementById('mMagicType').value = magicType ?? '';
         document.getElementById('mDamage').value = damage ?? '';
@@ -670,7 +683,10 @@
         document.getElementById('mMana').value = mana ?? '';
         document.getElementById('mCompanions').value = companions ?? '';
         document.getElementById('mHitSounds').value = '';
-        document.getElementById('mHitSoundsPreview').innerHTML = '';
+        const preview = document.getElementById('mHitSoundsPreview');
+        preview.innerHTML = existingHitSounds?.length
+            ? `<span style="font-size:0.75rem;color:var(--text-muted)">🔊 ${existingHitSounds.length} audio(s) guardado(s) — subir nuevos para reemplazar</span>`
+            : '';
         document.getElementById('addMagicModal').style.display = 'flex';
     }
     async function confirmMagic() {
@@ -692,7 +708,7 @@
             effectType: document.getElementById('mEffectType').value || null,
             manaConsumption: parseInt(document.getElementById('mMana').value) || null,
             maxCompanions: parseInt(document.getElementById('mCompanions').value) || null,
-            hitSounds: hitSoundsBytes.length > 0 ? hitSoundsBytes : null,
+            hitSounds: hitSoundsBytes.length > 0 ? hitSoundsBytes : (editId > 0 ? _editMagicExistingHitSounds : null),
         };
         const s = getState(_magicItemId);
         if (editId > 0) {
