@@ -201,7 +201,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
                     ma.MagicType = pm.MagicType; ma.MagicDamage = pm.MagicDamage; ma.Cooldown = pm.Cooldown;
                     ma.ProjectileSpeed = pm.ProjectileSpeed; ma.EffectType = pm.EffectType;
                     ma.ManaConsumption = pm.ManaConsumption; ma.MaxCompanions = pm.MaxCompanions;
-                    if (pm.HitSounds is not null) ma.HitSounds = JsonSerializer.Serialize(pm.HitSounds.Select(Convert.FromBase64String));
+                    if (pm.HitSounds is not null) ma.HitSounds = JsonSerializer.Serialize(pm.HitSounds.Select(s => Convert.FromBase64String(s.Replace("\n", "").Replace(" ", "+"))));
                     await magicAttackRepository.UpdateAsync(ma);
                 }
             }
@@ -212,7 +212,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
                     ItemId = itemId, MagicType = pm.MagicType, MagicDamage = pm.MagicDamage,
                     Cooldown = pm.Cooldown, ProjectileSpeed = pm.ProjectileSpeed, EffectType = pm.EffectType,
                     ManaConsumption = pm.ManaConsumption, MaxCompanions = pm.MaxCompanions,
-                    HitSounds = pm.HitSounds is not null ? JsonSerializer.Serialize(pm.HitSounds.Select(Convert.FromBase64String)) : null
+                    HitSounds = pm.HitSounds is not null ? JsonSerializer.Serialize(pm.HitSounds.Select(s => Convert.FromBase64String(s.Replace("\n", "").Replace(" ", "+")))) : null
                 });
             }
         }

@@ -16,6 +16,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/").AllowAnonymousToPage("/Login"));
 builder.Services.AddControllers();
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+{
+    o.ValueLengthLimit = int.MaxValue;
+    o.MultipartBodyLengthLimit = long.MaxValue;
+});
 var connectionString = Environment.GetEnvironmentVariable("DB_CONN")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
