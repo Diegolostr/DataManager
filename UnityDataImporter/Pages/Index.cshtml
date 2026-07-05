@@ -23,10 +23,6 @@
             <span class="stat-label">Total Items</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">@Model.Items.Count(i => i.Weapon != null)</span>
-            <span class="stat-label">Son Armas</span>
-        </div>
-        <div class="stat-card">
             <span class="stat-number">@Model.Items.Count(i => i.IsStackable == true)</span>
             <span class="stat-label">Stackables</span>
         </div>

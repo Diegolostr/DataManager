@@ -282,7 +282,7 @@
     <div class="items-list @(Model.FilteredItemId != null ? "item-detail-mode" : "")" id="itemsList">
         @foreach (var item in Model.Items)
         {
-            <div class="item-entry"
+            <details class="item-entry"
                  data-id="@item.Id.ToLower()"
                  data-name="@(item.Name?.ToLower() ?? "")"
                  data-desc="@(item.Description?.ToLower() ?? "")"
@@ -294,7 +294,7 @@
                  data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
                  data-weapon="@(item.Weapon != null ? "yes" : "no")">
                 <!-- Header -->
-                <div class="item-entry-header">
+                <summary class="item-entry-header">
                     <div class="item-row-icon">
                         @if (item.Icon != null)
                         {
@@ -304,16 +304,18 @@
                         {
                             <span class="no-icon">?</span>
                         }
-                        <a class="item-row-id" href="/Items?itemId=@item.Id">@(item.Name ?? item.Id)</a>
+                        <a class="item-row-id" href="/Items?itemId=@item.Id" onclick="event.stopPropagation()">@(item.Name ?? item.Id)</a>
                     </div>
-                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="enableEdit('@item.Id')">✏️ Editar</button>
-                    <button type="button" class="btn btn-success btn-sm" id="btn-save-@item.Id" style="display:none" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-@item.Id" style="display:none" onclick="cancelEdit('@item.Id')">✕ Cancelar</button>
-                    <form method="post" asp-page-handler="DeleteItem" style="margin:0" onsubmit="return confirm('¿Eliminar @item.Id?')">
-                        <input type="hidden" name="id" value="@item.Id" />
-                        <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
-                    </form>
-                </div>
+                    <div onclick="event.stopPropagation()" style="display:flex;gap:0.5rem;align-items:center">
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="enableEdit('@item.Id')">✏️ Editar</button>
+                        <button type="button" class="btn btn-success btn-sm" id="btn-save-@item.Id" style="display:none" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-@item.Id" style="display:none" onclick="cancelEdit('@item.Id')">✕ Cancelar</button>
+                        <form method="post" asp-page-handler="DeleteItem" style="margin:0" onsubmit="return confirm('¿Eliminar @item.Id?')">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                        </form>
+                    </div>
+                </summary>
 
                 <!-- cards -->
                 <form id="form-@item.Id" method="post" asp-page-handler="SaveItem" enctype="multipart/form-data">
@@ -517,7 +519,7 @@
                 </div>
                 </form>
 
-            </div>
+            </details>
         }
     </div>
     <!-- Sub-forms fuera de cualquier form para evitar anidamiento -->
@@ -786,6 +788,7 @@
     // ── Edit mode ───────────────────────────────────────────────────────────
     function enableEdit(itemId) {
         const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
+        entry.open = true;
         const form = document.getElementById('form-' + itemId);
         form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = false);
         entry.classList.add('editing');

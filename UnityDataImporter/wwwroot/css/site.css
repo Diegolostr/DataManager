@@ -273,7 +273,9 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 0.625rem 0.875rem; background: var(--bg-base);
     border-bottom: 1px solid var(--border-subtle); gap: 0.5rem;
+    cursor: pointer; user-select: none; list-style: none;
 }
+.item-entry-header::-webkit-details-marker { display: none; }
 .item-row-icon { display: flex; align-items: center; gap: 0.625rem; flex: 1; }
 .item-row-icon img {
     width: 32px; height: 32px; object-fit: contain;
