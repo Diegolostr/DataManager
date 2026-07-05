@@ -190,6 +190,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
             await magicAttackRepository.DeleteAsync(mid);
 
         // 8. New/edited magic attacks
+        Console.WriteLine($"[DEBUG] PendingMagicJson length={PendingMagicJson?.Length}, value={PendingMagicJson?[..Math.Min(200, PendingMagicJson?.Length ?? 0)]}");
         var magicList = ParseJson<List<PendingMagic>>(PendingMagicJson);
         foreach (var pm in magicList)
         {
