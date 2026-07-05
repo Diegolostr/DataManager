@@ -12,7 +12,8 @@ public record StatAmountDto(long Id, string Stat, int? Amount);
 
 public record MagicAttackDto(
     long Id, string MagicType, int? MagicDamage, float? Cooldown,
-    float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
+    float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions,
+    IEnumerable<byte[]>? HitSounds);
 
 public record ItemDto(
     string Id,
@@ -59,7 +60,8 @@ public record CreateEventDto(string EventTypeId);
 public record CreateWeaponDto(long? Damage, float? Heaviness, string? Ammo, float? Cooldown);
 public record CreateMagicAttackDto(
     string MagicType, int? MagicDamage, float? Cooldown,
-    float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
+    float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions,
+    IEnumerable<byte[]>? HitSounds);
 public record CreateItemAudioDto(string Audio, string? Name, string? Prefix);
 
 public record CreateItemDto(

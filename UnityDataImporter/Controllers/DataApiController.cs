@@ -376,7 +376,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         }
 
         foreach (var m in dto.MagicAttacks ?? [])
-            db.MagicAttacks.Add(new Models.MagicAttack { ItemId = itemId, MagicType = m.MagicType, MagicDamage = m.MagicDamage, Cooldown = m.Cooldown, ProjectileSpeed = m.ProjectileSpeed, EffectType = m.EffectType, ManaConsumption = m.ManaConsumption, MaxCompanions = m.MaxCompanions });
+            db.MagicAttacks.Add(new Models.MagicAttack { ItemId = itemId, MagicType = m.MagicType, MagicDamage = m.MagicDamage, Cooldown = m.Cooldown, ProjectileSpeed = m.ProjectileSpeed, EffectType = m.EffectType, ManaConsumption = m.ManaConsumption, MaxCompanions = m.MaxCompanions, HitSounds = m.HitSounds is not null ? JsonSerializer.Serialize(m.HitSounds) : null });
         await db.SaveChangesAsync();
     }
 
@@ -423,7 +423,8 @@ public class DataApiController(AppDbContext db) : ControllerBase
         itemEvents.Select(e => new ItemEventDto(e.Id, e.EventTypeId, e.EventType?.EventName, e.EventType?.Icon is not null ? Convert.ToBase64String(e.EventType.Icon) : null)),
         i.EquipmentSlot, i.HoldType,
         i.Weapon is null ? null : new WeaponDataDto(i.Weapon.Id, i.Weapon.Damage, i.Weapon.Heaviness, i.Weapon.Ammo, i.Weapon.Cooldown),
-        magicAttacks.Select(m => new MagicAttackDto(m.Id, m.MagicType, m.MagicDamage, m.Cooldown, m.ProjectileSpeed, m.EffectType, m.ManaConsumption, m.MaxCompanions)),
+        magicAttacks.Select(m => new MagicAttackDto(m.Id, m.MagicType, m.MagicDamage, m.Cooldown, m.ProjectileSpeed, m.EffectType, m.ManaConsumption, m.MaxCompanions,
+            m.HitSounds is not null ? JsonSerializer.Deserialize<IEnumerable<byte[]>>(m.HitSounds) : null)),
         i.BlockSoundsNavigation is null ? null : new ItemAudioDto(i.BlockSoundsNavigation.Id, Convert.ToBase64String(i.BlockSoundsNavigation.Audio), i.BlockSoundsNavigation.Name, i.BlockSoundsNavigation.Prefix),
         i.ParryAudioNavigation is null ? null : new ItemAudioDto(i.ParryAudioNavigation.Id, Convert.ToBase64String(i.ParryAudioNavigation.Audio), i.ParryAudioNavigation.Name, i.ParryAudioNavigation.Prefix),
         i.Size is null ? null : new Vector2Dto(i.Size.X, i.Size.Y)

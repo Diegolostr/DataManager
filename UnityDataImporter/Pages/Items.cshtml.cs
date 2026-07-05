@@ -197,6 +197,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
                     ma.MagicType = pm.MagicType; ma.MagicDamage = pm.MagicDamage; ma.Cooldown = pm.Cooldown;
                     ma.ProjectileSpeed = pm.ProjectileSpeed; ma.EffectType = pm.EffectType;
                     ma.ManaConsumption = pm.ManaConsumption; ma.MaxCompanions = pm.MaxCompanions;
+                    if (pm.HitSounds is not null) ma.HitSounds = JsonSerializer.Serialize(pm.HitSounds.Select(Convert.FromBase64String));
                     await magicAttackRepository.UpdateAsync(ma);
                 }
             }
@@ -206,7 +207,8 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
                 {
                     ItemId = itemId, MagicType = pm.MagicType, MagicDamage = pm.MagicDamage,
                     Cooldown = pm.Cooldown, ProjectileSpeed = pm.ProjectileSpeed, EffectType = pm.EffectType,
-                    ManaConsumption = pm.ManaConsumption, MaxCompanions = pm.MaxCompanions
+                    ManaConsumption = pm.ManaConsumption, MaxCompanions = pm.MaxCompanions,
+                    HitSounds = pm.HitSounds is not null ? JsonSerializer.Serialize(pm.HitSounds.Select(Convert.FromBase64String)) : null
                 });
             }
         }
@@ -329,5 +331,5 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     private record PendingStat(string Stat, int? Amount);
     private record PendingEvent(string? EventTypeId);
     private record PendingWeapon(long? Damage, float? Heaviness, string? Ammo, float? Cooldown);
-    private record PendingMagic(long Id, string MagicType, int? MagicDamage, float? Cooldown, float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions);
+    private record PendingMagic(long Id, string MagicType, int? MagicDamage, float? Cooldown, float? ProjectileSpeed, string? EffectType, int? ManaConsumption, int? MaxCompanions, List<string>? HitSounds);
 }

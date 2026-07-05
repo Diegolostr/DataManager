@@ -210,6 +210,11 @@
             </div>
             <div class="mb-3"><label>Mana Consumption</label><input class="form-control" type="number" id="mMana" /></div>
             <div class="mb-3"><label>Max Companions</label><input class="form-control" type="number" id="mCompanions" /></div>
+            <div class="mb-3">
+                <label>Hit Sounds</label>
+                <input class="form-control" type="file" id="mHitSounds" multiple accept="audio/*" />
+                <div id="mHitSoundsPreview" style="margin-top:0.4rem;display:flex;flex-direction:column;gap:0.2rem"></div>
+            </div>
             <div class="modal-footer-btns">
                 <button type="button" class="btn btn-success" onclick="confirmMagic()">Añadir</button>
                 <button type="button" class="btn btn-secondary" onclick="document.getElementById('addMagicModal').style.display='none'">Cancelar</button>
@@ -650,6 +655,8 @@
         _magicItemId = itemId;
         document.getElementById('magicModalEditId').value = '0';
         ['mMagicType','mDamage','mCooldown','mProjSpeed','mEffectType','mMana','mCompanions'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('mHitSounds').value = '';
+        document.getElementById('mHitSoundsPreview').innerHTML = '';
         document.getElementById('addMagicModal').style.display = 'flex';
     }
     function openEditMagic(itemId, id, magicType, damage, cooldown, projSpeed, effectType, mana, companions) {
@@ -662,10 +669,19 @@
         document.getElementById('mEffectType').value = effectType ?? '';
         document.getElementById('mMana').value = mana ?? '';
         document.getElementById('mCompanions').value = companions ?? '';
+        document.getElementById('mHitSounds').value = '';
+        document.getElementById('mHitSoundsPreview').innerHTML = '';
         document.getElementById('addMagicModal').style.display = 'flex';
     }
-    function confirmMagic() {
+    async function confirmMagic() {
         const editId = parseInt(document.getElementById('magicModalEditId').value) || 0;
+        const files = document.getElementById('mHitSounds').files;
+        const hitSoundsBytes = [];
+        for (const file of files) {
+            const buf = await file.arrayBuffer();
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            hitSoundsBytes.push(b64);
+        }
         const entry = {
             id: editId,
             _tempId: editId || Date.now(),
@@ -676,18 +692,18 @@
             effectType: document.getElementById('mEffectType').value || null,
             manaConsumption: parseInt(document.getElementById('mMana').value) || null,
             maxCompanions: parseInt(document.getElementById('mCompanions').value) || null,
+            hitSounds: hitSoundsBytes.length > 0 ? hitSoundsBytes : null,
         };
         const s = getState(_magicItemId);
         if (editId > 0) {
-            // update existing in list
             s.magic = s.magic.filter(x => x.id !== editId);
             const row = document.querySelector(`#magic-list-${_magicItemId} [data-magic-id="${editId}"]`);
             if (row) row.querySelector('.badge').textContent = entry.magicType;
         } else {
-            // new row
             const row = document.createElement('div');
             row.className = 'magic-attack-row'; row.dataset.tempId = entry._tempId;
-            row.innerHTML = `<span class="badge bg-secondary">${entry.magicType}</span><span>DMG: ${entry.magicDamage ?? '-'}</span><span>CD: ${entry.cooldown ?? '-'}</span><span>Mana: ${entry.manaConsumption ?? '-'}</span><button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePendingMagic('${_magicItemId}', ${entry._tempId}, this.closest('.magic-attack-row'))">🗑️</button>`;
+            const soundsLabel = hitSoundsBytes.length > 0 ? ` 🔊 ${hitSoundsBytes.length}` : '';
+            row.innerHTML = `<span class="badge bg-secondary">${entry.magicType}</span><span>DMG: ${entry.magicDamage ?? '-'}</span><span>CD: ${entry.cooldown ?? '-'}</span><span>Mana: ${entry.manaConsumption ?? '-'}</span>${soundsLabel}<button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePendingMagic('${_magicItemId}', ${entry._tempId}, this.closest('.magic-attack-row'))">🗑️</button>`;
             document.getElementById('magic-list-' + _magicItemId).appendChild(row);
         }
         s.magic.push(entry);
@@ -714,7 +730,7 @@
         document.getElementById('pendingEvents-' + itemId).value = JSON.stringify(s.events.map(({eventTypeId}) => ({eventTypeId})));
         document.getElementById('deletedEvents-' + itemId).value = JSON.stringify(s.deletedEvents);
         document.getElementById('pendingWeapon-' + itemId).value = s.weapon ? JSON.stringify(s.weapon) : '';
-        document.getElementById('pendingMagic-' + itemId).value = JSON.stringify(s.magic.map(({id, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions}) => ({id: id||0, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions})));
+        document.getElementById('pendingMagic-' + itemId).value = JSON.stringify(s.magic.map(({id, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds}) => ({id: id||0, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds: hitSounds ?? null})));
         document.getElementById('deletedMagic-' + itemId).value = JSON.stringify(s.deletedMagic);
     }
 

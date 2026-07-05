@@ -272,11 +272,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Cooldown).HasColumnName("cooldown");
             e.Property(x => x.ProjectileSpeed).HasColumnName("projectileSpeed");
             e.Property(x => x.EffectType).HasColumnName("effectType");
-            e.Property(x => x.HitSounds).HasColumnName("hitSounds");
+            e.Property(x => x.HitSounds).HasColumnName("hitSounds").HasColumnType("jsonb");
             e.Property(x => x.ManaConsumption).HasColumnName("manaConsumption");
             e.Property(x => x.MaxCompanions).HasColumnName("maxCompanions");
             e.HasOne(x => x.Item).WithMany().HasForeignKey(x => x.ItemId).IsRequired(false);
-            e.HasOne(x => x.HitSoundsNavigation).WithMany().HasForeignKey(x => x.HitSounds).IsRequired(false);
             e.HasOne(x => x.MagicTypeNavigation).WithMany().HasForeignKey(x => x.MagicType);
             e.HasOne(x => x.EffectTypeNavigation).WithMany().HasForeignKey(x => x.EffectType).IsRequired(false);
         });

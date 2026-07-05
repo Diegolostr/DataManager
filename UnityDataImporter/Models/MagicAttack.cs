@@ -9,12 +9,11 @@ public class MagicAttack
     public float? Cooldown { get; set; }
     public float? ProjectileSpeed { get; set; }
     public string? EffectType { get; set; }
-    public long? HitSounds { get; set; }
+    public string? HitSounds { get; set; }
     public int? ManaConsumption { get; set; }
     public int? MaxCompanions { get; set; }
 
     public Item? Item { get; set; }
-    public SoundsArray? HitSoundsNavigation { get; set; }
     public MagicType? MagicTypeNavigation { get; set; }
     public EffectType? EffectTypeNavigation { get; set; }
 }
