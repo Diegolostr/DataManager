@@ -97,7 +97,7 @@
                             <span>Max</span>
                             <span></span>
                         </div>
-                        <form method="post" asp-page-handler="SaveEntries">
+                        <form method="post" asp-page-handler="SaveEntries" id="form-lt-@table.Id">
                         @{ int ei = 0; }
                         @foreach (var entry in table.Entries)
                         {
@@ -110,17 +110,24 @@
                                     }
                                     @(entry.Item?.Name ?? entry.ItemId)
                                 </span>
-                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].Probability" value="@entry.Probability" min="0" max="100" />
-                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].MinAmount" value="@entry.MinAmount" min="1" />
-                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].MaxAmount" value="@entry.MaxAmount" min="1" />
-                                <form method="post" asp-page-handler="DeleteEntry" style="margin:0">
-                                    <input type="hidden" name="id" value="@entry.Id" />
-                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
-                                </form>
+                                <span class="lt-cell-view">@(entry.Probability?.ToString() ?? "-")%</span>
+                                <input type="text" inputmode="numeric" class="form-control form-control-sm lt-cell-edit" name="Entries[@ei].Probability" value="@entry.Probability" style="display:none" />
+                                <span class="lt-cell-view">@(entry.MinAmount?.ToString() ?? "-")</span>
+                                <input type="text" inputmode="numeric" class="form-control form-control-sm lt-cell-edit" name="Entries[@ei].MinAmount" value="@entry.MinAmount" style="display:none" />
+                                <span class="lt-cell-view">@(entry.MaxAmount?.ToString() ?? "-")</span>
+                                <input type="text" inputmode="numeric" class="form-control form-control-sm lt-cell-edit" name="Entries[@ei].MaxAmount" value="@entry.MaxAmount" style="display:none" />
+                                <div class="lt-row-actions">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1 lt-btn-edit" onclick="toggleEditRow(this, @table.Id)">✏️</button>
+                                    <form method="post" asp-page-handler="DeleteEntry" style="margin:0">
+                                        <input type="hidden" name="id" value="@entry.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                    </form>
+                                </div>
                             </div>
                             ei++;
                         }
-                        <div style="display:flex; justify-content:flex-end; padding: 0.5rem 0.5rem 0;">
+                        <div id="save-bar-@table.Id" style="display:none; justify-content:flex-end; padding: 0.5rem 0.5rem 0; gap:0.4rem;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEdit(@table.Id)">Cancelar</button>
                             <button type="submit" class="btn btn-success btn-sm">💾 Guardar</button>
                         </div>
                         </form>
@@ -135,6 +142,39 @@
     function openAddEntry(tableId) {
         document.getElementById('addEntryTableId').value = tableId;
         document.getElementById('addEntryModal').style.display = 'flex';
+    }
+
+    function toggleEditRow(btn, tableId) {
+        const row = btn.closest('.lt-entry-row');
+        const isEditing = row.classList.contains('editing');
+        if (!isEditing) {
+            row.classList.add('editing');
+            row.querySelectorAll('.lt-cell-view').forEach(el => el.style.display = 'none');
+            row.querySelectorAll('.lt-cell-edit').forEach(el => el.style.display = '');
+            btn.textContent = '↩';
+            document.getElementById('save-bar-' + tableId).style.display = 'flex';
+        } else {
+            cancelEditRow(row, btn);
+            const anyEditing = document.querySelectorAll('#form-lt-' + tableId + ' .lt-entry-row.editing').length > 0;
+            if (!anyEditing) document.getElementById('save-bar-' + tableId).style.display = 'none';
+        }
+    }
+
+    function cancelEditRow(row, btn) {
+        row.classList.remove('editing');
+        row.querySelectorAll('.lt-cell-edit').forEach(el => {
+            el.value = el.defaultValue;
+            el.style.display = 'none';
+        });
+        row.querySelectorAll('.lt-cell-view').forEach(el => el.style.display = '');
+        btn.textContent = '✏️';
+    }
+
+    function cancelEdit(tableId) {
+        document.querySelectorAll('#form-lt-' + tableId + ' .lt-entry-row.editing').forEach(row => {
+            cancelEditRow(row, row.querySelector('.lt-btn-edit'));
+        });
+        document.getElementById('save-bar-' + tableId).style.display = 'none';
     }
 
     document.getElementById('ltSearch').addEventListener('input', function () {
