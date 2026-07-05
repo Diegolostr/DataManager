@@ -10,7 +10,10 @@
 <div class="items-page">
     <div class="items-header">
         <h1>🎲 Loot Tables</h1>
-        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addTableModal').style.display='flex'">+ Nueva Loot Table</button>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addTableModal').style.display='flex'">+ Nueva Loot Table</button>
+        </div>
     </div>
     <div class="filter-bar">
         <input type="text" id="ltSearch" class="form-control" placeholder="Buscar por nombre..." />
@@ -142,6 +145,14 @@
 </div>
 
 <script>
+    function toggleAllFoldouts() {
+        const btn = document.querySelector('[onclick="toggleAllFoldouts()"]');
+        const entries = document.querySelectorAll('#ltList .lt-entry');
+        const anyOpen = [...entries].some(el => el.open);
+        entries.forEach(el => el.open = !anyOpen);
+        btn.textContent = anyOpen ? '⊞ Expandir todo' : '⊟ Colapsar todo';
+    }
+
     function openAddEntry(tableId) {
         document.getElementById('addEntryTableId').value = tableId;
         document.getElementById('addEntryModal').style.display = 'flex';

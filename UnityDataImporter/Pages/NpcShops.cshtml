@@ -10,7 +10,10 @@
 <div class="items-page">
     <div class="items-header">
         <h1>🏪 NPC Shops</h1>
-        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addShopModal').style.display='flex'">+ Nueva Shop</button>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addShopModal').style.display='flex'">+ Nueva Shop</button>
+        </div>
     </div>
     <div class="filter-bar">
         <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por nombre o ID..." />
@@ -120,8 +123,14 @@
                         @foreach (var rid in recipeIds)
                         {
                             var recipe = Model.RecipesById.GetValueOrDefault(rid);
+                            var firstOutputId = recipe != null ? Model.GetFirstOutputItemId(recipe) : null;
+                            var firstOutputItem = firstOutputId != null ? Model.ItemsById.GetValueOrDefault(firstOutputId) : null;
                             <div class="shop-recipe-row">
-                                <span class="shop-recipe-name">@(recipe?.RecipeName ?? $"Recipe #{rid}")</span>
+                                @if (firstOutputItem?.Icon != null)
+                                {
+                                    <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(firstOutputItem.Icon)" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;flex-shrink:0" />
+                                }
+                                <a href="/Recipes#recipe-@rid" class="shop-recipe-name" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">@(recipe?.RecipeName ?? $"Recipe #{rid}")</a>
                                 @if (recipe?.RecipeCost.HasValue == true)
                                 {
                                     <span class="badge bg-warning text-dark">💰 @recipe.RecipeCost</span>
@@ -129,7 +138,7 @@
                                 <form method="post" asp-page-handler="RemoveRecipe" style="margin:0">
                                     <input type="hidden" name="shopId" value="@shop.Id" />
                                     <input type="hidden" name="recipeId" value="@rid" />
-                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="event.stopPropagation()">✕</button>
                                 </form>
                             </div>
                         }
@@ -141,6 +150,12 @@
 </div>
 
 <script>
+    let _allExpanded = false;
+    function toggleAllFoldouts() {
+        _allExpanded = !_allExpanded;
+        document.querySelectorAll('#shopList .shop-entry').forEach(el => el.open = _allExpanded);
+        document.querySelector('[onclick="toggleAllFoldouts()"]').textContent = _allExpanded ? '⊟ Colapsar todo' : '⊞ Expandir todo';
+    }
     function openAddRecipe(shopId) {
         document.getElementById('addRecipeShopId').value = shopId;
         document.getElementById('addRecipeModal').style.display = 'flex';

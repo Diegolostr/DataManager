@@ -10,7 +10,10 @@
 <div class="items-page">
     <div class="items-header">
         <h1>📜 Recipes</h1>
-        <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addRecipeModal').style.display='flex'">+ Nueva Recipe</button>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addRecipeModal').style.display='flex'">+ Nueva Recipe</button>
+        </div>
     </div>
     <div class="filter-bar">
         <input type="text" id="recipeSearch" class="form-control" placeholder="Buscar por nombre..." />
@@ -95,7 +98,7 @@
             var inputItems = Model.ParseInputItems(recipe.InputItems);
             var outputItems = Model.ParseOutputItems(recipe.OutputItems);
 
-            <details class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id">
+            <details class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id" id="recipe-@recipe.Id">
                 <!-- form de guardado -->
                 <form method="post" asp-page-handler="SaveRecipe" asp-route-id="@recipe.Id" id="form-recipe-@recipe.Id"></form>
                 <!-- form de borrado -->
@@ -212,6 +215,14 @@
 </div>
 
 <script>
+    function toggleAllFoldouts() {
+        const btn = document.querySelector('[onclick="toggleAllFoldouts()"]');
+        const entries = document.querySelectorAll('#recipeList .recipe-entry');
+        const anyOpen = [...entries].some(el => el.open);
+        entries.forEach(el => el.open = !anyOpen);
+        btn.textContent = anyOpen ? '⊞ Expandir todo' : '⊟ Colapsar todo';
+    }
+
     function openInputModal(recipeId) {
         document.getElementById('inputRecipeId').value = recipeId;
         document.getElementById('addInputModal').style.display = 'flex';

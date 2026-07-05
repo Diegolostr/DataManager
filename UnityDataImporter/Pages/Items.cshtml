@@ -22,6 +22,7 @@
                 <span class="badge bg-primary fs-6">🔍 @Model.FilteredItemId</span>
                 <a class="btn btn-outline-secondary btn-sm" asp-page="Items">Ver todos</a>
             }
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
             <button class="btn btn-primary px-4" onclick="document.getElementById('addModal').style.display='flex'">
                 + Nuevo Item
             </button>
@@ -1075,6 +1076,14 @@
             form.style.zIndex = '2000';
             form.querySelector('input').focus();
         }
+    }
+
+    function toggleAllFoldouts() {
+        const btn = document.querySelector('[onclick="toggleAllFoldouts()"]');
+        const entries = document.querySelectorAll('#itemsList .item-entry');
+        const anyOpen = [...entries].some(el => el.open);
+        entries.forEach(el => el.open = !anyOpen);
+        btn.textContent = anyOpen ? '⊞ Expandir todo' : '⊟ Colapsar todo';
     }
 
     document.addEventListener('DOMContentLoaded', () => {

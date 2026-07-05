@@ -5,12 +5,13 @@ using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository recipeRepository, LootTableRepository lootTableRepository) : PageModel
+public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository recipeRepository, LootTableRepository lootTableRepository, ItemRepository itemRepository) : PageModel
 {
     public IEnumerable<NpcShop> Shops { get; set; } = [];
     public IEnumerable<Recipe> AllRecipes { get; set; } = [];
     public IEnumerable<LootTable> AllLootTables { get; set; } = [];
     public IReadOnlyDictionary<long, Recipe> RecipesById { get; set; } = new Dictionary<long, Recipe>();
+    public IReadOnlyDictionary<string, Item> ItemsById { get; set; } = new Dictionary<string, Item>();
 
     [BindProperty] public string? NewShopName { get; set; }
     [BindProperty] public string? NewShopLootTableId { get; set; }
@@ -24,6 +25,8 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
         AllRecipes = await recipeRepository.GetAllAsync();
         AllLootTables = await lootTableRepository.GetAllAsync();
         RecipesById = AllRecipes.ToDictionary(r => r.Id);
+        var allItems = await itemRepository.GetAllAsync();
+        ItemsById = allItems.ToDictionary(i => i.Id);
     }
 
     public async Task<IActionResult> OnPostAddShopAsync()
@@ -59,4 +62,8 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     }
 
     public List<long> ParseRecipeIds(string? json) => NpcShopRepository.ParseRecipeIds(json);
+    public string? GetFirstOutputItemId(Recipe recipe) {
+        var ids = RecipeRepository.ParseOutputItems(recipe.OutputItems);
+        return ids.FirstOrDefault();
+    }
 }
