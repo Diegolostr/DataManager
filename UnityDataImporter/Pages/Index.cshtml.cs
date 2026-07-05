@@ -234,7 +234,9 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
         EventTypes = await db.EventType.ToListAsync();
         var tables = await lootTableRepository.GetAllAsync();
         LootTableCount = tables.Count();
-        LootTablePreviews = tables.Select(t => new LootTablePreview(t.Id, t.Entries.Count, t.LootTableName)).ToList();
+        var allEntries = await db.LootTableData.ToListAsync();
+        var entriesByName = allEntries.GroupBy(e => e.LootTableId ?? "").ToDictionary(g => g.Key, g => g.Count());
+        LootTablePreviews = tables.Select(t => new LootTablePreview(t.Id, entriesByName.GetValueOrDefault(t.LootTableName ?? ""), t.LootTableName)).ToList();
         var recipes = await recipeRepository.GetAllAsync();
         RecipeCount = recipes.Count();
         RecipePreviews = recipes.Select(r => new RecipePreview(

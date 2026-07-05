@@ -8,6 +8,7 @@ namespace UnityDataImporter.Pages;
 public class LootTablesModel(LootTableRepository lootTableRepository, ItemRepository itemRepository) : PageModel
 {
     public IEnumerable<LootTable> LootTables { get; set; } = [];
+    public Dictionary<string, IEnumerable<LootTableData>> EntriesByTable { get; set; } = [];
     public IEnumerable<Item> AllItems { get; set; } = [];
 
     [BindProperty] public LootTableData NewEntry { get; set; } = new();
@@ -17,6 +18,10 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     {
         LootTables = await lootTableRepository.GetAllAsync();
         AllItems = await itemRepository.GetAllAsync();
+        var dict = new Dictionary<string, IEnumerable<LootTableData>>();
+        foreach (var t in LootTables)
+            dict[t.LootTableName ?? ""] = await lootTableRepository.GetEntriesAsync(t.LootTableName ?? "");
+        EntriesByTable = dict;
     }
 
     public async Task<IActionResult> OnPostAddTableAsync()
