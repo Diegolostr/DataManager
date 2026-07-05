@@ -11,7 +11,7 @@
     <div class="items-header">
         <h1>🏪 NPC Shops</h1>
         <div class="d-flex gap-2 align-items-center">
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
             <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addShopModal').style.display='flex'">+ Nueva Shop</button>
         </div>
     </div>
@@ -98,7 +98,7 @@
         @foreach (var shop in Model.Shops)
         {
             var recipeIds = Model.ParseRecipeIds(shop.Recipes);
-            <details class="shop-entry" data-id="@shop.Id" data-name="@(shop.Name?.ToLower() ?? "")">
+            <details class="shop-entry" data-id="@shop.Id" data-name="@(shop.Name?.ToLower() ?? "")" open>
                 <summary class="shop-header">
                     <span class="shop-id">@(shop.Name ?? $"Shop #{shop.Id}")</span>
                     <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation()">
@@ -130,7 +130,7 @@
                                 {
                                     <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(firstOutputItem.Icon)" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;flex-shrink:0" />
                                 }
-                                <a href="/Recipes#recipe-@rid" class="shop-recipe-name" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">@(recipe?.RecipeName ?? $"Recipe #{rid}")</a>
+                                <a href="/Recipes?recipeId=@rid&returnShopId=@shop.Id" class="shop-recipe-name" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">@(recipe?.RecipeName ?? $"Recipe #{rid}")</a>
                                 @if (recipe?.RecipeCost.HasValue == true)
                                 {
                                     <span class="badge bg-warning text-dark">💰 @recipe.RecipeCost</span>
@@ -150,7 +150,7 @@
 </div>
 
 <script>
-    let _allExpanded = false;
+    let _allExpanded = true;
     function toggleAllFoldouts() {
         _allExpanded = !_allExpanded;
         document.querySelectorAll('#shopList .shop-entry').forEach(el => el.open = _allExpanded);

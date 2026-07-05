@@ -11,7 +11,7 @@
     <div class="items-header">
         <h1>🎲 Loot Tables</h1>
         <div class="d-flex gap-2 align-items-center">
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
             <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addTableModal').style.display='flex'">+ Nueva Loot Table</button>
         </div>
     </div>
@@ -75,7 +75,7 @@
     <div class="lt-list" id="ltList">
         @foreach (var table in Model.LootTables)
         {
-            <details class="lt-entry" data-name="@((table.LootTableName ?? "").ToLower())">
+            <details class="lt-entry" data-name="@((table.LootTableName ?? "").ToLower())" open>
                 <summary class="lt-header">
                     <span class="lt-id">@(table.LootTableName ?? $"Loot Table #{table.Id}")</span>
                     <div class="d-flex gap-2" onclick="event.stopPropagation()">

@@ -11,7 +11,14 @@
     <div class="items-header">
         <h1>📜 Recipes</h1>
         <div class="d-flex gap-2 align-items-center">
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            @if (Model.ReturnShopId.HasValue)
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops">← Volver a Shops</a>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
+            }
             <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addRecipeModal').style.display='flex'">+ Nueva Recipe</button>
         </div>
     </div>
@@ -98,7 +105,7 @@
             var inputItems = Model.ParseInputItems(recipe.InputItems);
             var outputItems = Model.ParseOutputItems(recipe.OutputItems);
 
-            <details class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id" id="recipe-@recipe.Id">
+            <details class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id" id="recipe-@recipe.Id" open>
                 <!-- form de guardado -->
                 <form method="post" asp-page-handler="SaveRecipe" asp-route-id="@recipe.Id" id="form-recipe-@recipe.Id"></form>
                 <!-- form de borrado -->
@@ -270,4 +277,13 @@
             el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
         });
     });
+
+    const _returnShopId = '@Model.ReturnShopId';
+    if (_returnShopId) {
+        document.querySelectorAll('form').forEach(form => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = 'ReturnShopIdPost'; inp.value = _returnShopId;
+            form.appendChild(inp);
+        });
+    }
 </script>

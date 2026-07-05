@@ -22,7 +22,7 @@
                 <span class="badge bg-primary fs-6">🔍 @Model.FilteredItemId</span>
                 <a class="btn btn-outline-secondary btn-sm" asp-page="Items">Ver todos</a>
             }
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊞ Expandir todo</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
             <button class="btn btn-primary px-4" onclick="document.getElementById('addModal').style.display='flex'">
                 + Nuevo Item
             </button>
@@ -298,7 +298,7 @@
                  data-hold="@(item.HoldType?.ToLower() ?? "")"
                  data-stack="@(item.IsStackable?.ToString().ToLower() ?? "")"
                  data-block="@(item.CanBlock?.ToString().ToLower() ?? "")"
-                 data-weapon="@(item.Weapon != null ? "yes" : "no")">
+                 data-weapon="@(item.Weapon != null ? "yes" : "no")" open>
                 <!-- Header -->
                 <summary class="item-entry-header">
                     <div class="item-row-icon">

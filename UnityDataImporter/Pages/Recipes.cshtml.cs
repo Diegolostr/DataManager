@@ -11,6 +11,8 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     public IEnumerable<Recipe> Recipes { get; set; } = [];
     public IEnumerable<Item> AllItems { get; set; } = [];
     public IReadOnlyDictionary<string, Item> ItemsById { get; set; } = new Dictionary<string, Item>();
+    public long? FilteredRecipeId { get; set; }
+    public long? ReturnShopId { get; set; }
 
     [BindProperty] public string NewRecipeName { get; set; } = string.Empty;
     [BindProperty] public int? NewRecipeCost { get; set; }
@@ -21,10 +23,17 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     [BindProperty] public string EditRecipeName { get; set; } = string.Empty;
     [BindProperty] public int? EditRecipeCost { get; set; }
     [BindProperty] public List<RecipeInputItemEdit> EditInputItems { get; set; } = [];
+    [BindProperty] public long? ReturnShopIdPost { get; set; }
 
-    public async Task OnGetAsync()
+    private IActionResult RedirectBack() =>
+        ReturnShopIdPost.HasValue ? RedirectToPage("/NpcShops") : RedirectToPage();
+
+    public async Task OnGetAsync(long? recipeId, long? returnShopId)
     {
-        Recipes = await recipeRepository.GetAllAsync();
+        FilteredRecipeId = recipeId;
+        ReturnShopId = returnShopId;
+        var all = await recipeRepository.GetAllAsync();
+        Recipes = recipeId.HasValue ? all.Where(r => r.Id == recipeId.Value) : all;
         AllItems = await itemRepository.GetAllAsync();
         ItemsById = AllItems.ToDictionary(i => i.Id);
     }
@@ -33,7 +42,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         if (!string.IsNullOrWhiteSpace(NewRecipeName))
             await recipeRepository.AddAsync(NewRecipeName, NewRecipeCost);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostSaveRecipeAsync(long id)
@@ -41,39 +50,39 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         ModelState.Clear();
         var items = EditInputItems.Select(e => new RecipeInputItem(e.ItemId, e.Amount)).ToList();
         await recipeRepository.UpdateAsync(id, EditRecipeName, EditRecipeCost, items);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostDeleteRecipeAsync(long id)
     {
         await recipeRepository.DeleteAsync(id);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostAddInputItemAsync()
     {
         ModelState.Clear();
         await recipeRepository.AddInputItemAsync(TargetRecipeId, InputItemId, InputItemAmount);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveInputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveInputItemAsync(recipeId, itemId);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostAddOutputItemAsync()
     {
         ModelState.Clear();
         await recipeRepository.AddOutputItemAsync(TargetRecipeId, OutputItemId);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveOutputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveOutputItemAsync(recipeId, itemId);
-        return RedirectToPage();
+        return RedirectBack();
     }
 
     public List<RecipeInputItem> ParseInputItems(string? json) => RecipeRepository.ParseInputItems(json);
