@@ -46,7 +46,9 @@ if (!app.Environment.IsDevelopment())
         ctx.Response.StatusCode = 500;
         ctx.Response.ContentType = "application/json";
         var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        await ctx.Response.WriteAsync($"{{\"error\":\"{ex?.Error.Message}\",\"stack\":\"{ex?.Error.StackTrace?.Replace("\"", "'")}\"}}");
+        var msg = ex?.Error.Message;
+        var inner = ex?.Error.InnerException?.Message;
+        await ctx.Response.WriteAsync($"{{\"error\":\"{msg}\",\"inner\":\"{inner}\",\"stack\":\"{ex?.Error.StackTrace?.Replace("\"", "'")}\"}}");
     }));
     app.UseHsts();
 }
