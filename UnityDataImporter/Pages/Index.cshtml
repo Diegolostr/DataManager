@@ -504,8 +504,8 @@
             <div class="lt-list-preview" id="shopIndexGrid">
                 @foreach (var s in Model.NpcShopPreviews)
                 {
-                    <a class="lt-preview-card" asp-page="NpcShops" data-id="@s.Id" data-lt="@((s.LootTableName ?? "").ToLower())">
-                        <span class="lt-preview-id">#@s.Id</span>
+                    <a class="lt-preview-card" asp-page="NpcShops" data-id="@s.Id" data-name="@((s.Name ?? "").ToLower())" data-lt="@((s.LootTableName ?? "").ToLower())">
+                        <span class="lt-preview-id">@(s.Name ?? $"Shop #{s.Id}")</span>
                         <span class="lt-preview-count">@s.RecipeCount recipes</span>
                         @if (s.LootTableName != null)
                         {
@@ -596,7 +596,7 @@
     document.getElementById('shopIndexSearch').addEventListener('input', function () {
         const q = this.value.toLowerCase();
         document.querySelectorAll('#shopIndexGrid .lt-preview-card').forEach(el => {
-            el.style.display = !q || el.dataset.id.includes(q) || el.dataset.lt.includes(q) ? '' : 'none';
+            el.style.display = !q || el.dataset.id.includes(q) || el.dataset.name.includes(q) || el.dataset.lt.includes(q) ? '' : 'none';
         });
     });
 </script>

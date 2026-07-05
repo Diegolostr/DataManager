@@ -10,7 +10,7 @@ namespace UnityDataImporter.Pages;
 public record LootTablePreview(long Id, int EntryCount, string? Name);
 public record RecipePreview(string Name, int InputCount, int OutputCount);
 
-public record NpcShopPreview(long Id, int RecipeCount, string? LootTableName);
+public record NpcShopPreview(long Id, int RecipeCount, string? LootTableName, string? Name);
 
 public class IndexModel(ItemRepository itemRepository, LootTableRepository lootTableRepository, RecipeRepository recipeRepository, NpcShopRepository npcShopRepository, AppDbContext db) : PageModel
 {
@@ -247,7 +247,8 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
         NpcShopPreviews = shops.Select(s => new NpcShopPreview(
             s.Id,
             NpcShopRepository.ParseRecipeIds(s.Recipes).Count,
-            s.LootTable?.LootTableName
+            s.LootTable?.LootTableName,
+            s.Name
         )).ToList();
     }
 }

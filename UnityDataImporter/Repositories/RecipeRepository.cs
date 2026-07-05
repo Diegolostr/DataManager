@@ -6,6 +6,7 @@ using System.Text.Json;
 namespace UnityDataImporter.Repositories;
 
 public record RecipeInputItem(string ItemId, int Amount);
+public class RecipeInputItemEdit { public string ItemId { get; set; } = string.Empty; public int Amount { get; set; } = 1; }
 
 public class RecipeRepository(AppDbContext db)
 {
@@ -21,6 +22,16 @@ public class RecipeRepository(AppDbContext db)
         db.Recipes.Add(recipe);
         await db.SaveChangesAsync();
         return recipe;
+    }
+
+    public async Task UpdateAsync(long id, string name, int? cost, List<RecipeInputItem> inputItems)
+    {
+        var recipe = await db.Recipes.FindAsync(id);
+        if (recipe is null) return;
+        recipe.RecipeName = name;
+        recipe.RecipeCost = cost;
+        recipe.InputItems = JsonSerializer.Serialize(inputItems);
+        await db.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(long id)

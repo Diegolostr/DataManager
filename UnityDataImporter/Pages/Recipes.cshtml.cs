@@ -18,6 +18,9 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     [BindProperty] public string InputItemId { get; set; } = string.Empty;
     [BindProperty] public int InputItemAmount { get; set; } = 1;
     [BindProperty] public string OutputItemId { get; set; } = string.Empty;
+    [BindProperty] public string EditRecipeName { get; set; } = string.Empty;
+    [BindProperty] public int? EditRecipeCost { get; set; }
+    [BindProperty] public List<RecipeInputItemEdit> EditInputItems { get; set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -30,6 +33,14 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         if (!string.IsNullOrWhiteSpace(NewRecipeName))
             await recipeRepository.AddAsync(NewRecipeName, NewRecipeCost);
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostSaveRecipeAsync(long id)
+    {
+        ModelState.Clear();
+        var items = EditInputItems.Select(e => new RecipeInputItem(e.ItemId, e.Amount)).ToList();
+        await recipeRepository.UpdateAsync(id, EditRecipeName, EditRecipeCost, items);
         return RedirectToPage();
     }
 

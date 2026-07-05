@@ -118,19 +118,22 @@
                                 <input type="text" inputmode="numeric" class="form-control form-control-sm lt-cell-edit" name="Entries[@ei].MaxAmount" value="@entry.MaxAmount" style="display:none" />
                                 <div class="lt-row-actions">
                                     <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1 lt-btn-edit" onclick="toggleEditRow(this, @table.Id)">✏️</button>
-                                    <form method="post" asp-page-handler="DeleteEntry" style="margin:0">
-                                        <input type="hidden" name="id" value="@entry.Id" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
-                                    </form>
+                                    <button type="submit" form="del-entry-@entry.Id" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                 </div>
                             </div>
                             ei++;
                         }
+                        </form>
+                        @foreach (var entry in table.Entries)
+                        {
+                            <form method="post" asp-page-handler="DeleteEntry" id="del-entry-@entry.Id" style="display:none">
+                                <input type="hidden" name="id" value="@entry.Id" />
+                            </form>
+                        }
                         <div id="save-bar-@table.Id" style="display:none; justify-content:flex-end; padding: 0.5rem 0.5rem 0; gap:0.4rem;">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEdit(@table.Id)">Cancelar</button>
-                            <button type="submit" class="btn btn-success btn-sm">💾 Guardar</button>
+                            <button type="submit" form="form-lt-@table.Id" class="btn btn-success btn-sm">💾 Guardar</button>
                         </div>
-                        </form>
                     }
                 </div>
             </div>

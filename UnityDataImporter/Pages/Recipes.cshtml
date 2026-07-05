@@ -95,19 +95,40 @@
             var inputItems = Model.ParseInputItems(recipe.InputItems);
             var outputItems = Model.ParseOutputItems(recipe.OutputItems);
 
-            <div class="recipe-entry" data-name="@recipe.RecipeName.ToLower()">
+            <div class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id">
+                <!-- form de guardado -->
+                <form method="post" asp-page-handler="SaveRecipe" asp-route-id="@recipe.Id" id="form-recipe-@recipe.Id"></form>
+                <!-- form de borrado -->
+                <form method="post" asp-page-handler="DeleteRecipe" id="del-recipe-@recipe.Id" style="display:none">
+                    <input type="hidden" name="id" value="@recipe.Id" />
+                </form>
+
                 <div class="recipe-header">
                     <div class="d-flex align-items-center gap-3">
-                        <span class="recipe-name">@recipe.RecipeName</span>
+                        <!-- vista -->
+                        <span class="recipe-name recipe-view-name">@recipe.RecipeName</span>
                         @if (recipe.RecipeCost.HasValue)
                         {
-                            <span class="badge bg-warning text-dark">💰 @recipe.RecipeCost</span>
+                            <span class="badge bg-warning text-dark recipe-view-cost">💰 @recipe.RecipeCost</span>
                         }
+                        else
+                        {
+                            <span class="recipe-view-cost"></span>
+                        }
+                        <!-- edición -->
+                        <input type="text" form="form-recipe-@recipe.Id" name="EditRecipeName" value="@recipe.RecipeName"
+                               class="form-control form-control-sm recipe-edit-field" style="display:none;max-width:200px" />
+                        <input type="text" inputmode="numeric" form="form-recipe-@recipe.Id" name="EditRecipeCost" value="@recipe.RecipeCost"
+                               class="form-control form-control-sm recipe-edit-field" style="display:none;max-width:90px" placeholder="Coste" />
                     </div>
-                    <form method="post" asp-page-handler="DeleteRecipe" style="margin:0">
-                        <input type="hidden" name="id" value="@recipe.Id" />
-                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
-                    </form>
+                    <div class="d-flex gap-2 align-items-center">
+                        <div id="save-bar-recipe-@recipe.Id" style="display:none; gap:0.4rem" class="d-flex">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditRecipe(@recipe.Id)">Cancelar</button>
+                            <button type="submit" form="form-recipe-@recipe.Id" class="btn btn-success btn-sm">💾 Guardar</button>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm recipe-btn-edit" onclick="toggleEditRecipe(@recipe.Id)">✏️</button>
+                        <button type="submit" form="del-recipe-@recipe.Id" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
+                    </div>
                 </div>
 
                 <div class="recipe-body">
@@ -117,6 +138,7 @@
                             <span>🔧 Input Items</span>
                             <button type="button" class="btn btn-outline-success btn-sm" onclick="openInputModal(@recipe.Id)">+</button>
                         </div>
+                        @{ int ri2 = 0; }
                         @if (!inputItems.Any())
                         {
                             <span class="recipe-empty">Sin items de entrada</span>
@@ -132,13 +154,19 @@
                                         <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(inputItem.Icon)" class="recipe-item-icon" />
                                     }
                                     <span class="recipe-item-name">@(inputItem?.Name ?? input.ItemId)</span>
-                                    <span class="badge bg-secondary">x@(input.Amount)</span>
-                                    <form method="post" asp-page-handler="RemoveInputItem" style="margin:0">
+                                    <span class="badge bg-secondary recipe-view-amount">x@(input.Amount)</span>
+                                    <input type="hidden" form="form-recipe-@recipe.Id" name="EditInputItems[@ri2].ItemId" value="@input.ItemId" />
+                                    <input type="text" inputmode="numeric" form="form-recipe-@recipe.Id"
+                                           name="EditInputItems[@ri2].Amount"
+                                           class="form-control form-control-sm recipe-edit-amount" data-index="@ri2"
+                                           value="@input.Amount" style="display:none;max-width:60px" />
+                                    <form method="post" asp-page-handler="RemoveInputItem" id="del-input-@recipe.Id-@ri2" style="display:none">
                                         <input type="hidden" name="recipeId" value="@recipe.Id" />
                                         <input type="hidden" name="itemId" value="@input.ItemId" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                     </form>
+                                    <button type="submit" form="del-input-@recipe.Id-@ri2" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                 </div>
+                                ri2++;
                             }
                         }
                     </div>
@@ -151,6 +179,7 @@
                             <span>✅ Output Items</span>
                             <button type="button" class="btn btn-outline-success btn-sm" onclick="openOutputModal(@recipe.Id)">+</button>
                         </div>
+                        @{ int oi = 0; }
                         @if (!outputItems.Any())
                         {
                             <span class="recipe-empty">Sin items de salida</span>
@@ -166,12 +195,13 @@
                                         <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(outItem.Icon)" class="recipe-item-icon" />
                                     }
                                     <span class="recipe-item-name">@(outItem?.Name ?? outId)</span>
-                                    <form method="post" asp-page-handler="RemoveOutputItem" style="margin:0">
+                                    <form method="post" asp-page-handler="RemoveOutputItem" id="del-output-@recipe.Id-@oi" style="display:none">
                                         <input type="hidden" name="recipeId" value="@recipe.Id" />
                                         <input type="hidden" name="itemId" value="@outId" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                     </form>
+                                    <button type="submit" form="del-output-@recipe.Id-@oi" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                 </div>
+                                oi++;
                             }
                         }
                     </div>
@@ -189,6 +219,32 @@
     function openOutputModal(recipeId) {
         document.getElementById('outputRecipeId').value = recipeId;
         document.getElementById('addOutputModal').style.display = 'flex';
+    }
+
+    function toggleEditRecipe(id) {
+        const entry = document.querySelector(`.recipe-entry[data-id="${id}"]`);
+        const editing = entry.classList.contains('editing');
+        if (!editing) {
+            entry.classList.add('editing');
+            entry.querySelectorAll('.recipe-view-name, .recipe-view-cost').forEach(el => el.style.display = 'none');
+            entry.querySelectorAll('.recipe-edit-field').forEach(el => el.style.display = '');
+            entry.querySelectorAll('.recipe-view-amount').forEach(el => el.style.display = 'none');
+            entry.querySelectorAll('.recipe-edit-amount').forEach(el => el.style.display = '');
+            document.getElementById('save-bar-recipe-' + id).style.display = 'flex';
+        } else {
+            cancelEditRecipe(id);
+        }
+    }
+
+    function cancelEditRecipe(id) {
+        const entry = document.querySelector(`.recipe-entry[data-id="${id}"]`);
+        entry.classList.remove('editing');
+        entry.querySelectorAll('.recipe-edit-field, .recipe-edit-amount').forEach(el => {
+            el.value = el.defaultValue;
+            el.style.display = 'none';
+        });
+        entry.querySelectorAll('.recipe-view-name, .recipe-view-cost, .recipe-view-amount').forEach(el => el.style.display = '');
+        document.getElementById('save-bar-recipe-' + id).style.display = 'none';
     }
 
     document.getElementById('recipeSearch').addEventListener('input', function () {
