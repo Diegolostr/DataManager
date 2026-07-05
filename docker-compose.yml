@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_USER: mvpuser
@@ -22,9 +22,11 @@ services:
     environment:
       DB_CONN: "Host=db;Port=5432;Database=datamanager;Username=mvpuser;Password=mvpuser"
       API_KEY: "14a53ef987175d2e4641d8e43ea93620"
-      ASPNETCOLRE_Kestrel__Certificates__Default__Path: "unity-datamanager.tailfff421.ts.net.crt"
-      ASPNETCOLRE_Kestrel__Certificates__Default__KeyPath: "unity-datamanager.tailfff421.ts.net.key"
-
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/certs/unity-datamanager.tailfff421.ts.net.crt"
+      ASPNETCORE_Kestrel__Certificates__Default__KeyPath: "/certs/unity-datamanager.tailfff421.ts.net.key"
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       - db
 
