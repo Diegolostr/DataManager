@@ -88,4 +88,5 @@ public record CreateItemDto(
     CreateItemAudioDto? BlockSounds,
     CreateItemAudioDto? ParryAudio,
     Vector2Dto? Size,
-    IEnumerable<byte[]>? ItemAnimations = null);
+    IEnumerable<byte[]>? ItemAnimations = null,
+    string? ItemSound = null);

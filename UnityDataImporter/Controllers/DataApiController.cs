@@ -294,6 +294,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         await db.SaveChangesAsync();
 
         var (blockSoundsId, parryAudioId) = await UpsertAudios(dto, null, null);
+        var soundTypeId = dto.ItemSound is not null ? await db.InventorySound.Where(s => s.Sound == dto.ItemSound).Select(s => (long?)s.Id).FirstOrDefaultAsync() : null;
 
         var item = new Models.Item
         {
@@ -305,6 +306,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             ItemRarity = dto.ItemRarity, ItemType = dto.ItemType,
             EquipmentSlot = dto.EquipmentSlot, HoldType = dto.HoldType,
             ItemSize = vec.Id, BlockSounds = blockSoundsId, ParryAudio = parryAudioId,
+            ItemSoundType = soundTypeId,
             ItemAnimations = dto.ItemAnimations is not null ? JsonSerializer.Serialize(dto.ItemAnimations) : null
         };
         db.Items.Add(item);
@@ -330,6 +332,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         }
 
         var (blockSoundsId, parryAudioId) = await UpsertAudios(dto, existing.BlockSounds, existing.ParryAudio);
+        var soundTypeId = dto.ItemSound is not null ? await db.InventorySound.Where(s => s.Sound == dto.ItemSound).Select(s => (long?)s.Id).FirstOrDefaultAsync() : null;
 
         existing.Name = dto.Name;
         existing.Description = dto.Description;
@@ -346,6 +349,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         existing.HoldType = dto.HoldType;
         existing.BlockSounds = blockSoundsId;
         existing.ParryAudio = parryAudioId;
+        if (soundTypeId.HasValue) existing.ItemSoundType = soundTypeId;
         if (dto.ItemAnimations is not null) existing.ItemAnimations = JsonSerializer.Serialize(dto.ItemAnimations);
 
         await db.SaveChangesAsync();
