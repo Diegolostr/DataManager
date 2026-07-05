@@ -190,11 +190,9 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
             await magicAttackRepository.DeleteAsync(mid);
 
         // 8. New/edited magic attacks
-        Console.WriteLine($"[DEBUG] PendingMagicJson={PendingMagicJson}");
         var magicList = ParseJson<List<PendingMagic>>(PendingMagicJson);
         foreach (var pm in magicList)
         {
-            Console.WriteLine($"[DEBUG] magic: type={pm.MagicType} effect={pm.EffectType} id={pm.Id}");
             if (pm.Id > 0)
             {
                 var ma = await magicAttackRepository.GetByIdAsync(pm.Id);
@@ -378,7 +376,8 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     private static T ParseJson<T>(string? json) where T : new()
     {
         if (string.IsNullOrWhiteSpace(json)) return new T();
-        try { return JsonSerializer.Deserialize<T>(json) ?? new T(); } catch { return new T(); }
+        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        try { return JsonSerializer.Deserialize<T>(json, opts) ?? new T(); } catch { return new T(); }
     }
 
     private record PendingStat(string Stat, int? Amount);
