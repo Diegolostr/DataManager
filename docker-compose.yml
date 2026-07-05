@@ -19,8 +19,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_CONN: "Host=db;Port=5432;Database=unitydata;Username=unity;Password=unity"
-      API_KEY: ""
+      DB_CONN: "Host=host.docker.internal;Port=5432;Database=datamanager;Username=mvpuser;Password=mvpuser"
+      API_KEY: "14a53ef987175d2e4641d8e43ea93620"
     depends_on:
       - db
 
