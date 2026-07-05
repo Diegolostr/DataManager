@@ -912,8 +912,22 @@
         entry.querySelectorAll('.anim-sprite-thumb .btn, .edit-only').forEach(el => el.style.display = '');
         document.getElementById('icon-btn-' + itemId).style.display = '';
         document.getElementById('anim-btn-' + itemId).style.display = '';
+        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => {
+            el.addEventListener('change', () => getState(itemId).formDirty = true, { once: true });
+        });
     }
     function cancelEdit(itemId) {
+        const s = pending[itemId];
+        const hasChanges = s && (
+            s.formDirty ||
+            s.stats.length || s.deletedStats.length ||
+            s.events.length || s.deletedEvents.length ||
+            s.weapon || s.magic.length || s.deletedMagic.length ||
+            s.animations || s.deleteAnimations.length ||
+            s.deleteBlockSound || s.deleteParryAudio ||
+            document.getElementById('icon-input-' + itemId)?.value ||
+            document.getElementById('anim-input-' + itemId)?.value
+        );
         const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
         const form = document.getElementById('form-' + itemId);
         form.reset();
@@ -929,9 +943,8 @@
         document.getElementById('anim-btn-' + itemId).style.display = 'none';
         document.getElementById('anim-input-' + itemId).value = '';
         document.getElementById('anim-preview-' + itemId).textContent = '';
-        // restore sprite thumbs and hide delete buttons
-        entry.querySelectorAll('.anim-sprite-thumb .btn').forEach(el => el.style.display = 'none');
-        location.reload();
+        entry.querySelectorAll('.anim-sprite-thumb .btn, .edit-only').forEach(el => el.style.display = 'none');
+        if (hasChanges) location.reload();
     }
     function onInlineStackableChange(select, itemId) {
         const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
