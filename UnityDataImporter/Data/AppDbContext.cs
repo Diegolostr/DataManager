@@ -221,6 +221,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.LootTableDatas).HasColumnName("lootTableDatas").HasColumnType("jsonb");
             e.Property(x => x.LootTableName).HasColumnName("lootTableName");
+            e.Property(x => x.LootTableId).HasColumnName("lootTableId");
+            e.HasIndex(x => x.LootTableId).IsUnique();
         });
 
         modelBuilder.Entity<LootTableData>(e =>
@@ -234,6 +236,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.MaxAmount).HasColumnName("maxAmount");
             e.Property(x => x.LootTableId).HasColumnName("lootTableId");
             e.HasOne(x => x.Item).WithMany().HasForeignKey(x => x.ItemId);
+            e.HasOne(x => x.LootTable).WithMany(l => l.Entries).HasForeignKey(x => x.LootTableId).HasPrincipalKey(l => l.LootTableId).IsRequired(false);
         });
 
         modelBuilder.Entity<Recipe>(e =>
@@ -255,7 +258,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Recipes).HasColumnName("recipes").HasColumnType("jsonb");
             e.Property(x => x.LootTableId).HasColumnName("lootTableId");
             e.Property(x => x.Name).HasColumnName("name");
-            e.HasOne(x => x.LootTable).WithMany().HasForeignKey(x => x.LootTableId).IsRequired(false);
+            e.HasOne(x => x.LootTable).WithMany().HasForeignKey(x => x.LootTableId).HasPrincipalKey(l => l.LootTableId).IsRequired(false);
         });
 
         modelBuilder.Entity<MagicAttack>(e =>

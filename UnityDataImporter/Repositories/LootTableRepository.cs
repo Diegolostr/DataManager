@@ -8,17 +8,17 @@ namespace UnityDataImporter.Repositories;
 public class LootTableRepository(AppDbContext db)
 {
     public async Task<IEnumerable<LootTable>> GetAllAsync() =>
-        await db.LootTables.ToListAsync();
+        await db.LootTables.Include(l => l.Entries).ThenInclude(e => e.Item).ToListAsync();
 
-    public async Task<IEnumerable<LootTableData>> GetEntriesAsync(string lootTableName) =>
-        await db.LootTableData.Include(e => e.Item).Where(e => e.LootTableId == lootTableName).ToListAsync();
+    public async Task<IEnumerable<LootTableData>> GetEntriesAsync(string lootTableId) =>
+        await db.LootTableData.Include(e => e.Item).Where(e => e.LootTableId == lootTableId).ToListAsync();
 
     public async Task<LootTable?> GetByIdAsync(long id) =>
-        await db.LootTables.FirstOrDefaultAsync(l => l.Id == id);
+        await db.LootTables.Include(l => l.Entries).ThenInclude(e => e.Item).FirstOrDefaultAsync(l => l.Id == id);
 
     public async Task<LootTable> AddAsync(string? name)
     {
-        var lootTable = new LootTable { LootTableDatas = "[]", LootTableName = name };
+        var lootTable = new LootTable { LootTableDatas = "[]", LootTableName = name ?? "", LootTableId = name };
         db.LootTables.Add(lootTable);
         await db.SaveChangesAsync();
         return lootTable;
@@ -26,9 +26,9 @@ public class LootTableRepository(AppDbContext db)
 
     public async Task DeleteAsync(long id)
     {
-        var entity = await db.LootTables.FirstOrDefaultAsync(l => l.Id == id);
+        var entity = await db.LootTables.Include(l => l.Entries).FirstOrDefaultAsync(l => l.Id == id);
         if (entity is null) return;
-        db.LootTableData.RemoveRange(db.LootTableData.Where(e => e.LootTableId == entity.LootTableName));
+        db.LootTableData.RemoveRange(entity.Entries);
         db.LootTables.Remove(entity);
         await db.SaveChangesAsync();
     }
@@ -50,12 +50,12 @@ public class LootTableRepository(AppDbContext db)
         await SyncJsonAsync(tableId);
     }
 
-    private async Task SyncJsonAsync(string? lootTableName)
+    private async Task SyncJsonAsync(string? lootTableId)
     {
-        if (lootTableName is null) return;
-        var table = await db.LootTables.FirstOrDefaultAsync(t => t.LootTableName == lootTableName);
+        if (lootTableId is null) return;
+        var table = await db.LootTables.FirstOrDefaultAsync(t => t.LootTableId == lootTableId);
         if (table is null) return;
-        var ids = await db.LootTableData.Where(e => e.LootTableId == lootTableName).Select(e => e.Id).ToListAsync();
+        var ids = await db.LootTableData.Where(e => e.LootTableId == lootTableId).Select(e => e.Id).ToListAsync();
         table.LootTableDatas = JsonSerializer.Serialize(ids);
         await db.SaveChangesAsync();
     }

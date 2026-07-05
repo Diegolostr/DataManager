@@ -84,8 +84,7 @@
                     </div>
                 </div>
                 <div class="lt-entries">
-                    @{ var entries = Model.EntriesByTable.GetValueOrDefault(table.LootTableName ?? "") ?? []; }
-                    @if (!entries.Any())
+                    @if (!table.Entries.Any())
                     {
                         <span class="lt-empty">Sin entradas</span>
                     }
@@ -98,7 +97,7 @@
                             <span>Max</span>
                             <span></span>
                         </div>
-                        @foreach (var entry in entries)
+                        @foreach (var entry in table.Entries)
                         {
                             <div class="lt-entry-row">
                                 <span class="lt-item-name">

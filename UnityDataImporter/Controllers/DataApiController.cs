@@ -99,14 +99,11 @@ public class DataApiController(AppDbContext db) : ControllerBase
     [HttpGet("loottables")]
     public async Task<IActionResult> GetAllLootTables()
     {
-        var tables = await db.LootTables.ToListAsync();
-        var entries = await db.LootTableData.ToListAsync();
-        var entriesByName = entries.GroupBy(e => e.LootTableId).ToDictionary(g => g.Key ?? "", g => g.ToList());
-        return Ok(tables.Select(t =>
-        {
-            var tableEntries = entriesByName.GetValueOrDefault(t.LootTableName ?? "") ?? [];
-            return new LootTableDto(t.Id, t.LootTableName, tableEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount)));
-        }));
+        var tables = await db.LootTables.Include(l => l.Entries).ToListAsync();
+        return Ok(tables.Select(t => new LootTableDto(
+            t.Id, t.LootTableName,
+            t.Entries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))
+        )));
     }
 
     // GET /api/npcshops
@@ -136,15 +133,15 @@ public class DataApiController(AppDbContext db) : ControllerBase
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
-            var existing = await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.Name);
+            var existing = await db.LootTables.Include(l => l.Entries).FirstOrDefaultAsync(l => l.LootTableId == dto.Name);
             if (existing is not null)
             {
-                db.LootTableData.RemoveRange(db.LootTableData.Where(e => e.LootTableId == dto.Name));
+                db.LootTableData.RemoveRange(existing.Entries);
                 await db.SaveChangesAsync();
             }
             else
             {
-                existing = new Models.LootTable { LootTableName = dto.Name, LootTableDatas = "[]" };
+                existing = new Models.LootTable { LootTableName = dto.Name, LootTableId = dto.Name, LootTableDatas = "[]" };
                 db.LootTables.Add(existing);
                 await db.SaveChangesAsync();
             }
@@ -237,16 +234,16 @@ public class DataApiController(AppDbContext db) : ControllerBase
                 }
             }
 
-            var lootTable = dto.LootTableId is not null ? await db.LootTables.FirstOrDefaultAsync(l => l.LootTableName == dto.LootTableId) : null;
+            var lootTable = dto.LootTableId is not null ? await db.LootTables.FirstOrDefaultAsync(l => l.LootTableId == dto.LootTableId) : null;
             var existingShop = dto.Name is not null ? await db.NpcsShop.FirstOrDefaultAsync(s => s.Name == dto.Name) : null;
             if (existingShop is not null)
             {
-                existingShop.LootTableId = lootTable?.Id;
+                existingShop.LootTableId = lootTable?.LootTableId;
                 existingShop.Recipes = JsonSerializer.Serialize(recipeIds);
             }
             else
             {
-                existingShop = new Models.NpcShop { Name = dto.Name, LootTableId = lootTable?.Id, Recipes = JsonSerializer.Serialize(recipeIds) };
+                existingShop = new Models.NpcShop { Name = dto.Name, LootTableId = lootTable?.LootTableId, Recipes = JsonSerializer.Serialize(recipeIds) };
                 db.NpcsShop.Add(existingShop);
             }
             await db.SaveChangesAsync();
@@ -261,7 +258,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
                     JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
                     JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
                     r.RecipeCost)),
-                lootTable?.LootTableName,
+                lootTable?.LootTableId,
                 lootTable?.LootTableName));
         }
         catch (Exception ex)
