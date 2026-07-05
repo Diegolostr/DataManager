@@ -18,9 +18,13 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+      - "8443:8443"
     environment:
       DB_CONN: "Host=db;Port=5432;Database=datamanager;Username=mvpuser;Password=mvpuser"
       API_KEY: "14a53ef987175d2e4641d8e43ea93620"
+      ASPNETCOLRE_Kestrel__Certificates__Default__Path: "unity-datamanager.tailfff421.ts.net.crt"
+      ASPNETCOLRE_Kestrel__Certificates__Default__KeyPath: "unity-datamanager.tailfff421.ts.net.key"
+
     depends_on:
       - db
 
