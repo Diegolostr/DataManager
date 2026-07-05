@@ -1,3 +1,28 @@
 /* items.css */
 .edit-only { display: none; }
 .item-entry.editing .edit-only { display: revert; }
+
+.desc-display {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+.item-entry.editing .desc-display {
+    cursor: pointer;
+    border-bottom: 1px dashed var(--border-subtle);
+    color: var(--text-main);
+}
+.item-entry.editing .desc-display:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.rt-btn {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    line-height: 1.4;
+}
