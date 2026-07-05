@@ -13,7 +13,7 @@
         <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addShopModal').style.display='flex'">+ Nueva Shop</button>
     </div>
     <div class="filter-bar">
-        <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por ID..." />
+        <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por nombre o ID..." />
     </div>
 
     <!-- Modal Nueva Shop -->
@@ -21,6 +21,10 @@
         <div class="modal-card">
             <h4>🏪 Nueva NPC Shop</h4>
             <form method="post" asp-page-handler="AddShop">
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" name="NewShopName" placeholder="Nombre de la shop" />
+                </div>
                 <div class="mb-3">
                     <label>Loot Table (opcional)</label>
                     <select class="form-select" name="NewShopLootTableId">
@@ -91,9 +95,9 @@
         @foreach (var shop in Model.Shops)
         {
             var recipeIds = Model.ParseRecipeIds(shop.Recipes);
-            <div class="shop-entry" data-id="@shop.Id">
+            <div class="shop-entry" data-id="@shop.Id" data-name="@(shop.Name?.ToLower() ?? "")">
                 <div class="shop-header">
-                    <span class="shop-id">Shop #@shop.Id</span>
+                    <span class="shop-id">@(shop.Name ?? $"Shop #{shop.Id}")</span>
                     <div class="d-flex align-items-center gap-2">
                         <span class="shop-lt-badge">
                             🎲 @(shop.LootTable?.LootTableName ?? shop.LootTableId ?? "Sin loot table")
@@ -149,7 +153,7 @@
     document.getElementById('shopSearch').addEventListener('input', function () {
         const q = this.value.toLowerCase();
         document.querySelectorAll('#shopList .shop-entry').forEach(el => {
-            el.style.display = !q || el.dataset.id.includes(q) ? '' : 'none';
+            el.style.display = !q || el.dataset.id.includes(q) || el.dataset.name.includes(q) ? '' : 'none';
         });
     });
 </script>

@@ -12,6 +12,7 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
 
     [BindProperty] public LootTableData NewEntry { get; set; } = new();
     [BindProperty] public string? NewTableName { get; set; }
+    [BindProperty] public List<LootTableEntryEditDto> Entries { get; set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -35,6 +36,13 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     {
         ModelState.Clear();
         await lootTableRepository.AddEntryAsync(NewEntry);
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostSaveEntriesAsync()
+    {
+        ModelState.Clear();
+        await lootTableRepository.UpdateEntriesAsync(Entries);
         return RedirectToPage();
     }
 

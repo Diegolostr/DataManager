@@ -5,6 +5,14 @@ using System.Text.Json;
 
 namespace UnityDataImporter.Repositories;
 
+public class LootTableEntryEditDto
+{
+    public long Id { get; set; }
+    public int? Probability { get; set; }
+    public int? MinAmount { get; set; }
+    public int? MaxAmount { get; set; }
+}
+
 public class LootTableRepository(AppDbContext db)
 {
     public async Task<IEnumerable<LootTable>> GetAllAsync() =>
@@ -38,6 +46,20 @@ public class LootTableRepository(AppDbContext db)
         db.LootTableData.Add(entry);
         await db.SaveChangesAsync();
         await SyncJsonAsync(entry.LootTableId);
+    }
+
+    public async Task UpdateEntriesAsync(List<LootTableEntryEditDto> edits)
+    {
+        var ids = edits.Select(e => e.Id).ToList();
+        var entries = await db.LootTableData.Where(e => ids.Contains(e.Id)).ToListAsync();
+        foreach (var entry in entries)
+        {
+            var edit = edits.First(e => e.Id == entry.Id);
+            entry.Probability = edit.Probability;
+            entry.MinAmount = edit.MinAmount;
+            entry.MaxAmount = edit.MaxAmount;
+        }
+        await db.SaveChangesAsync();
     }
 
     public async Task DeleteEntryAsync(long entryId)

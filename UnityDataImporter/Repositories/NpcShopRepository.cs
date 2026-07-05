@@ -10,9 +10,9 @@ public class NpcShopRepository(AppDbContext db)
     public async Task<IEnumerable<NpcShop>> GetAllAsync() =>
         await db.NpcsShop.Include(n => n.LootTable).ToListAsync();
 
-    public async Task<NpcShop> AddAsync(string? lootTableId)
+    public async Task<NpcShop> AddAsync(string? lootTableId, string? name = null)
     {
-        var shop = new NpcShop { Recipes = "[]", LootTableId = lootTableId };
+        var shop = new NpcShop { Recipes = "[]", LootTableId = lootTableId, Name = name };
         db.NpcsShop.Add(shop);
         await db.SaveChangesAsync();
         return shop;

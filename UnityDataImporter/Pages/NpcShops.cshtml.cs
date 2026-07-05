@@ -12,6 +12,7 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     public IEnumerable<LootTable> AllLootTables { get; set; } = [];
     public IReadOnlyDictionary<long, Recipe> RecipesById { get; set; } = new Dictionary<long, Recipe>();
 
+    [BindProperty] public string? NewShopName { get; set; }
     [BindProperty] public string? NewShopLootTableId { get; set; }
     [BindProperty] public long TargetShopId { get; set; }
     [BindProperty] public long AddRecipeId { get; set; }
@@ -27,7 +28,7 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
 
     public async Task<IActionResult> OnPostAddShopAsync()
     {
-        await npcShopRepository.AddAsync(NewShopLootTableId);
+        await npcShopRepository.AddAsync(NewShopLootTableId, NewShopName);
         return RedirectToPage();
     }
 

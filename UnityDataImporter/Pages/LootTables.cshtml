@@ -97,8 +97,11 @@
                             <span>Max</span>
                             <span></span>
                         </div>
+                        <form method="post" asp-page-handler="SaveEntries">
+                        @{ int ei = 0; }
                         @foreach (var entry in table.Entries)
                         {
+                            <input type="hidden" name="Entries[@ei].Id" value="@entry.Id" />
                             <div class="lt-entry-row">
                                 <span class="lt-item-name">
                                     @if (entry.Item?.Icon != null)
@@ -107,15 +110,20 @@
                                     }
                                     @(entry.Item?.Name ?? entry.ItemId)
                                 </span>
-                                <span>@(entry.Probability?.ToString() ?? "-")%</span>
-                                <span>@(entry.MinAmount?.ToString() ?? "-")</span>
-                                <span>@(entry.MaxAmount?.ToString() ?? "-")</span>
+                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].Probability" value="@entry.Probability" min="0" max="100" />
+                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].MinAmount" value="@entry.MinAmount" min="1" />
+                                <input type="number" class="form-control form-control-sm" name="Entries[@ei].MaxAmount" value="@entry.MaxAmount" min="1" />
                                 <form method="post" asp-page-handler="DeleteEntry" style="margin:0">
                                     <input type="hidden" name="id" value="@entry.Id" />
                                     <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">✕</button>
                                 </form>
                             </div>
+                            ei++;
                         }
+                        <div style="display:flex; justify-content:flex-end; padding: 0.5rem 0.5rem 0;">
+                            <button type="submit" class="btn btn-success btn-sm">💾 Guardar</button>
+                        </div>
+                        </form>
                     }
                 </div>
             </div>
