@@ -95,7 +95,7 @@
             var inputItems = Model.ParseInputItems(recipe.InputItems);
             var outputItems = Model.ParseOutputItems(recipe.OutputItems);
 
-            <div class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id">
+            <details class="recipe-entry" data-name="@recipe.RecipeName.ToLower()" data-id="@recipe.Id">
                 <!-- form de guardado -->
                 <form method="post" asp-page-handler="SaveRecipe" asp-route-id="@recipe.Id" id="form-recipe-@recipe.Id"></form>
                 <!-- form de borrado -->
@@ -103,7 +103,7 @@
                     <input type="hidden" name="id" value="@recipe.Id" />
                 </form>
 
-                <div class="recipe-header">
+                <summary class="recipe-header" onclick="handleRecipeSummary(event, @recipe.Id)">
                     <div class="d-flex align-items-center gap-3">
                         <!-- vista -->
                         <span class="recipe-name recipe-view-name">@recipe.RecipeName</span>
@@ -121,7 +121,7 @@
                         <input type="text" inputmode="numeric" form="form-recipe-@recipe.Id" name="EditRecipeCost" value="@recipe.RecipeCost"
                                class="form-control form-control-sm recipe-edit-field" style="display:none;max-width:90px" placeholder="Coste" />
                     </div>
-                    <div class="d-flex gap-2 align-items-center">
+                    <div class="d-flex gap-2 align-items-center" onclick="event.stopPropagation()">
                         <div id="save-bar-recipe-@recipe.Id" style="display:none; gap:0.4rem" class="d-flex">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditRecipe(@recipe.Id)">Cancelar</button>
                             <button type="submit" form="form-recipe-@recipe.Id" class="btn btn-success btn-sm">💾 Guardar</button>
@@ -129,7 +129,7 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm recipe-btn-edit" onclick="toggleEditRecipe(@recipe.Id)">✏️</button>
                         <button type="submit" form="del-recipe-@recipe.Id" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
                     </div>
-                </div>
+                </summary>
 
                 <div class="recipe-body">
                     <!-- Input Items -->
@@ -206,7 +206,7 @@
                         }
                     </div>
                 </div>
-            </div>
+            </details>
         }
     </div>
 </div>
@@ -221,10 +221,16 @@
         document.getElementById('addOutputModal').style.display = 'flex';
     }
 
+    function handleRecipeSummary(e, id) {
+        // si el click viene de los botones de acción, no togglamos el details
+        if (e.target.closest('.d-flex.gap-2')) e.preventDefault();
+    }
+
     function toggleEditRecipe(id) {
         const entry = document.querySelector(`.recipe-entry[data-id="${id}"]`);
         const editing = entry.classList.contains('editing');
         if (!editing) {
+            entry.open = true;
             entry.classList.add('editing');
             entry.querySelectorAll('.recipe-view-name, .recipe-view-cost').forEach(el => el.style.display = 'none');
             entry.querySelectorAll('.recipe-edit-field').forEach(el => el.style.display = '');

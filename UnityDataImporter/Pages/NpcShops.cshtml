@@ -95,10 +95,10 @@
         @foreach (var shop in Model.Shops)
         {
             var recipeIds = Model.ParseRecipeIds(shop.Recipes);
-            <div class="shop-entry" data-id="@shop.Id" data-name="@(shop.Name?.ToLower() ?? "")">
-                <div class="shop-header">
+            <details class="shop-entry" data-id="@shop.Id" data-name="@(shop.Name?.ToLower() ?? "")">
+                <summary class="shop-header">
                     <span class="shop-id">@(shop.Name ?? $"Shop #{shop.Id}")</span>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation()">
                         <span class="shop-lt-badge">
                             🎲 @(shop.LootTable?.LootTableName ?? shop.LootTableId ?? "Sin loot table")
                         </span>
@@ -109,7 +109,7 @@
                             <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
                         </form>
                     </div>
-                </div>
+                </summary>
                 <div class="shop-recipes">
                     @if (!recipeIds.Any())
                     {
@@ -135,7 +135,7 @@
                         }
                     }
                 </div>
-            </div>
+            </details>
         }
     </div>
 </div>

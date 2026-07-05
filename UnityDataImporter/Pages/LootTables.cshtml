@@ -72,17 +72,17 @@
     <div class="lt-list" id="ltList">
         @foreach (var table in Model.LootTables)
         {
-            <div class="lt-entry" data-name="@((table.LootTableName ?? "").ToLower())">
-                <div class="lt-header">
+            <details class="lt-entry" data-name="@((table.LootTableName ?? "").ToLower())">
+                <summary class="lt-header">
                     <span class="lt-id">@(table.LootTableName ?? $"Loot Table #{table.Id}")</span>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2" onclick="event.stopPropagation()">
                         <button type="button" class="btn btn-outline-success btn-sm" onclick="openAddEntry(@table.Id)">+ Entrada</button>
                         <form method="post" asp-page-handler="DeleteTable" style="margin:0">
                             <input type="hidden" name="id" value="@table.Id" />
                             <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
                         </form>
                     </div>
-                </div>
+                </summary>
                 <div class="lt-entries">
                     @if (!table.Entries.Any())
                     {
@@ -136,7 +136,7 @@
                         </div>
                     }
                 </div>
-            </div>
+            </details>
         }
     </div>
 </div>
