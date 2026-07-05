@@ -3,9 +3,9 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: unity
-      POSTGRES_PASSWORD: unity
-      POSTGRES_DB: unitydata
+      POSTGRES_USER: mvpuser
+      POSTGRES_PASSWORD: mvpuser
+      POSTGRES_DB: datamanager
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -19,7 +19,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_CONN: "Host=host.docker.internal;Port=5432;Database=datamanager;Username=mvpuser;Password=mvpuser"
+      DB_CONN: "Host=db;Port=5432;Database=datamanager;Username=mvpuser;Password=mvpuser"
       API_KEY: "14a53ef987175d2e4641d8e43ea93620"
     depends_on:
       - db
