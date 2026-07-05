@@ -932,7 +932,7 @@
         // restore sprite thumbs and hide delete buttons
         entry.querySelectorAll('.anim-sprite-thumb .btn').forEach(el => el.style.display = 'none');
         location.reload();
-    }}
+    }
     function onInlineStackableChange(select, itemId) {
         const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
         if (select.value === 'false') { maxAmount.value = 1; maxAmount.readOnly = true; maxAmount.style.backgroundColor = '#2a2d3e'; }
