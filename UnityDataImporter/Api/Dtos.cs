@@ -37,7 +37,8 @@ public record ItemDto(
     ItemAudioDto? BlockSounds,
     ItemAudioDto? ParryAudio,
     Vector2Dto? Size,
-    IEnumerable<byte[]>? ItemAnimations);
+    IEnumerable<byte[]>? ItemAnimations,
+    string? ItemSound);
 
 public record LootTableEntryDto(long Id, string ItemId, int? Probability, int? MinAmount, int? MaxAmount);
 

@@ -430,6 +430,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
         i.BlockSoundsNavigation is null ? null : new ItemAudioDto(i.BlockSoundsNavigation.Id, Convert.ToBase64String(i.BlockSoundsNavigation.Audio), i.BlockSoundsNavigation.Name, i.BlockSoundsNavigation.Prefix),
         i.ParryAudioNavigation is null ? null : new ItemAudioDto(i.ParryAudioNavigation.Id, Convert.ToBase64String(i.ParryAudioNavigation.Audio), i.ParryAudioNavigation.Name, i.ParryAudioNavigation.Prefix),
         i.Size is null ? null : new Vector2Dto(i.Size.X, i.Size.Y),
-        i.ItemAnimations is not null ? JsonSerializer.Deserialize<IEnumerable<byte[]>>(i.ItemAnimations) : null
+        i.ItemAnimations is not null ? JsonSerializer.Deserialize<IEnumerable<byte[]>>(i.ItemAnimations) : null,
+        i.SoundType?.Sound
     );
 }

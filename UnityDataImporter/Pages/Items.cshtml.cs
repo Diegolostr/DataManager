@@ -49,6 +49,9 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     [BindProperty] public string? DeletedEventsJson { get; set; }
     [BindProperty] public string? DeletedMagicJson { get; set; }
     [BindProperty] public string? PendingAnimationsJson { get; set; }
+    [BindProperty] public string? DeleteAnimationsJson { get; set; }
+    [BindProperty] public bool DeleteBlockSound { get; set; }
+    [BindProperty] public bool DeleteParryAudio { get; set; }
     [BindProperty] public string? EditItemId { get; set; }
 
     public async Task OnGetAsync(string? itemId)
@@ -215,17 +218,49 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
         }
 
         // 9. Animations
-        if (!string.IsNullOrWhiteSpace(PendingAnimationsJson))
+        var deleteAnimIndices = ParseJson<List<int>>(DeleteAnimationsJson);
+        if (deleteAnimIndices.Count > 0 || !string.IsNullOrWhiteSpace(PendingAnimationsJson))
         {
-            var b64List = JsonSerializer.Deserialize<List<string>>(PendingAnimationsJson);
-            if (b64List is { Count: > 0 })
+            var animItem = await db.Items.FindAsync(itemId);
+            if (animItem is not null)
             {
-                var item = await db.Items.FindAsync(itemId);
-                if (item is not null)
+                var existing = animItem.ItemAnimations is not null
+                    ? JsonSerializer.Deserialize<List<byte[]>>(animItem.ItemAnimations) ?? []
+                    : new List<byte[]>();
+                // remove deleted indices
+                var kept = existing.Where((_, i) => !deleteAnimIndices.Contains(i)).ToList();
+                // append new
+                if (!string.IsNullOrWhiteSpace(PendingAnimationsJson))
                 {
-                    item.ItemAnimations = JsonSerializer.Serialize(b64List.Select(Convert.FromBase64String));
-                    await db.SaveChangesAsync();
+                    var newB64 = JsonSerializer.Deserialize<List<string>>(PendingAnimationsJson) ?? [];
+                    kept.AddRange(newB64.Select(Convert.FromBase64String));
                 }
+                animItem.ItemAnimations = kept.Count > 0 ? JsonSerializer.Serialize(kept) : null;
+                await db.SaveChangesAsync();
+            }
+        }
+
+        // 10. Delete block sound / parry audio
+        if (DeleteBlockSound || DeleteParryAudio)
+        {
+            var audioItem = await db.Items.FindAsync(itemId);
+            if (audioItem is not null)
+            {
+                if (DeleteBlockSound && audioItem.BlockSounds.HasValue)
+                {
+                    var audio = await db.ItemAudio.FindAsync(audioItem.BlockSounds.Value);
+                    audioItem.BlockSounds = null;
+                    await db.SaveChangesAsync();
+                    if (audio is not null) db.ItemAudio.Remove(audio);
+                }
+                if (DeleteParryAudio && audioItem.ParryAudio.HasValue)
+                {
+                    var audio = await db.ItemAudio.FindAsync(audioItem.ParryAudio.Value);
+                    audioItem.ParryAudio = null;
+                    await db.SaveChangesAsync();
+                    if (audio is not null) db.ItemAudio.Remove(audio);
+                }
+                await db.SaveChangesAsync();
             }
         }
 

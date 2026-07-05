@@ -212,8 +212,8 @@
             <div class="mb-3"><label>Max Companions</label><input class="form-control" type="number" id="mCompanions" /></div>
             <div class="mb-3">
                 <label>Hit Sounds</label>
-                <input class="form-control" type="file" id="mHitSounds" multiple accept="audio/*" />
                 <div id="mHitSoundsPreview" style="margin-top:0.4rem;display:flex;flex-direction:column;gap:0.2rem"></div>
+                <input class="form-control" type="file" id="mHitSounds" multiple accept="audio/*" style="margin-top:0.3rem" />
             </div>
             <div class="modal-footer-btns">
                 <button type="button" class="btn btn-success" onclick="confirmMagic()">Añadir</button>
@@ -334,6 +334,9 @@
                 <input type="hidden" name="PendingMagicJson" id="pendingMagic-@item.Id" value="[]" />
                 <input type="hidden" name="DeletedMagicJson" id="deletedMagic-@item.Id" value="[]" />
                 <input type="hidden" name="PendingAnimationsJson" id="pendingAnimations-@item.Id" value="" />
+                <input type="hidden" name="DeleteAnimationsJson" id="deleteAnimations-@item.Id" value="[]" />
+                <input type="hidden" name="DeleteBlockSound" id="deleteBlockSound-@item.Id" value="false" />
+                <input type="hidden" name="DeleteParryAudio" id="deleteParryAudio-@item.Id" value="false" />
                 <div class="item-cards-row">
 
                     <div class="icard">
@@ -358,16 +361,22 @@
                             <div class="ifield">
                                 <span class="ilabel">Animations</span>
                                 <span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
+                                    <div id="anim-list-@item.Id" style="display:flex;flex-wrap:wrap;gap:0.3rem">
                                     @if (item.ItemAnimations != null)
                                     {
-                                        var animCount = System.Text.Json.JsonSerializer.Deserialize<List<byte[]>>(item.ItemAnimations)?.Count ?? 0;
-                                        if (animCount > 0)
+                                        var animBytes = System.Text.Json.JsonSerializer.Deserialize<List<byte[]>>(item.ItemAnimations) ?? [];
+                                        for (int ai = 0; ai < animBytes.Count; ai++)
                                         {
-                                            <span style="font-size:0.75rem;color:var(--text-muted)">🖼️ @animCount sprite(s) guardado(s)</span>
+                                            var b64 = Convert.ToBase64String(animBytes[ai]);
+                                            <div class="anim-sprite-thumb" data-anim-index="@ai" style="position:relative;display:inline-flex">
+                                                <img src="data:image/png;base64,@b64" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)" />
+                                                <button type="button" class="btn btn-danger btn-xs edit-only" style="position:absolute;top:-4px;right:-4px;padding:0 3px;font-size:0.6rem;line-height:1.2;display:none" onclick="deleteAnimation('@item.Id', @ai, this.closest('.anim-sprite-thumb'))">✕</button>
+                                            </div>
                                         }
                                     }
+                                    </div>
                                     <input type="file" class="form-control form-control-sm" id="anim-input-@item.Id" multiple accept="image/*" style="display:none" onchange="onAnimationsChange('@item.Id')" />
-                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="anim-btn-@item.Id" style="display:none" onclick="document.getElementById('anim-input-@item.Id').click()">Cambiar sprites</button>
+                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="anim-btn-@item.Id" style="display:none" onclick="document.getElementById('anim-input-@item.Id').click()">+ Añadir sprites</button>
                                     <span id="anim-preview-@item.Id" style="font-size:0.75rem;color:var(--text-muted)"></span>
                                 </span>
                             </div>
@@ -504,6 +513,11 @@
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.BlockSoundsNavigation.Name ?? $"#{item.BlockSoundsNavigation.Id}")</span>
                                 }
                                 <input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled />
+                                @if (item.BlockSoundsNavigation != null)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-xs edit-only" style="display:none" onclick="markDeleteBlockSound('@item.Id')">🗑️ Eliminar Block Sound</button>
+                                    <span id="del-blocksound-label-@item.Id" style="display:none;font-size:0.75rem;color:#f0b0b0">⚠️ Se eliminará al guardar</span>
+                                }
                             </span></div>
                             <div class="ifield" id="field-parryaudio-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Parry Audio</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
                                 @if (item.ParryAudioNavigation != null)
@@ -511,6 +525,11 @@
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.ParryAudioNavigation.Name ?? $"#{item.ParryAudioNavigation.Id}")</span>
                                 }
                                 <input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" disabled />
+                                @if (item.ParryAudioNavigation != null)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-xs edit-only" style="display:none" onclick="markDeleteParryAudio('@item.Id')">🗑️ Eliminar Parry Audio</button>
+                                    <span id="del-parryaudio-label-@item.Id" style="display:none;font-size:0.75rem;color:#f0b0b0">⚠️ Se eliminará al guardar</span>
+                                }
                             </span></div>
                         </div>
                     </div>
@@ -592,7 +611,7 @@
     // ── Pending state per item ──────────────────────────────────────────────
     const pending = {};
     function getState(itemId) {
-        if (!pending[itemId]) pending[itemId] = { stats: [], deletedStats: [], events: [], deletedEvents: [], weapon: null, magic: [], deletedMagic: [], animations: null };
+        if (!pending[itemId]) pending[itemId] = { stats: [], deletedStats: [], events: [], deletedEvents: [], weapon: null, magic: [], deletedMagic: [], animations: null, deleteAnimations: [], deleteBlockSound: false, deleteParryAudio: false };
         return pending[itemId];
     }
 
@@ -702,10 +721,19 @@
         document.getElementById('mHitSounds').value = '';
         const preview = document.getElementById('mHitSoundsPreview');
         preview.innerHTML = existingHitSounds?.length
-            ? `<span style="font-size:0.75rem;color:var(--text-muted)">🔊 ${existingHitSounds.length} audio(s) guardado(s) — subir nuevos para reemplazar</span>`
+            ? existingHitSounds.map((b64, i) =>
+                `<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.75rem">
+                    <span style="color:var(--text-muted)">🔊 Audio ${i+1}</span>
+                    <button type="button" class="btn btn-outline-danger btn-xs" style="padding:0 4px;font-size:0.65rem" onclick="removePendingHitSound(${i}, this.parentElement)">✕</button>
+                </div>`).join('')
             : '';
         document.getElementById('addMagicModal').style.display = 'flex';
     }
+    function removePendingHitSound(index, rowEl) {
+        _editMagicExistingHitSounds = _editMagicExistingHitSounds?.filter((_, i) => i !== index) ?? null;
+        rowEl.remove();
+    }
+
     async function confirmMagic() {
         const editId = parseInt(document.getElementById('magicModalEditId').value) || 0;
         const files = document.getElementById('mHitSounds').files;
@@ -755,6 +783,27 @@
         el.remove();
     }
 
+    // ── Animations delete ───────────────────────────────────────────────────
+    function deleteAnimation(itemId, index, el) {
+        getState(itemId).deleteAnimations.push(index);
+        syncHidden(itemId);
+        el.remove();
+    }
+
+    // ── Block Sound / Parry Audio delete ────────────────────────────────────
+    function markDeleteBlockSound(itemId) {
+        getState(itemId).deleteBlockSound = true;
+        document.getElementById('deleteBlockSound-' + itemId).value = 'true';
+        const lbl = document.getElementById('del-blocksound-label-' + itemId);
+        if (lbl) lbl.style.display = '';
+    }
+    function markDeleteParryAudio(itemId) {
+        getState(itemId).deleteParryAudio = true;
+        document.getElementById('deleteParryAudio-' + itemId).value = 'true';
+        const lbl = document.getElementById('del-parryaudio-label-' + itemId);
+        if (lbl) lbl.style.display = '';
+    }
+
     async function onAnimationsChange(itemId) {
         const files = document.getElementById('anim-input-' + itemId).files;
         const b64List = [];
@@ -778,6 +827,7 @@
         document.getElementById('pendingMagic-' + itemId).value = JSON.stringify(s.magic.map(({id, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds}) => ({id: id||0, magicType, magicDamage, cooldown, projectileSpeed, effectType, manaConsumption, maxCompanions, hitSounds: hitSounds ?? null})));
         document.getElementById('deletedMagic-' + itemId).value = JSON.stringify(s.deletedMagic);
         document.getElementById('pendingAnimations-' + itemId).value = s.animations ? JSON.stringify(s.animations) : '';
+        document.getElementById('deleteAnimations-' + itemId).value = JSON.stringify(s.deleteAnimations);
     }
 
     // ── Filters ─────────────────────────────────────────────────────────────
@@ -858,6 +908,8 @@
         document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = 'none';
         document.getElementById('btn-save-' + itemId).style.display = '';
         document.getElementById('btn-cancel-' + itemId).style.display = '';
+        // show per-sprite delete buttons and delete-audio buttons
+        entry.querySelectorAll('.anim-sprite-thumb .btn, .edit-only').forEach(el => el.style.display = '');
         document.getElementById('icon-btn-' + itemId).style.display = '';
         document.getElementById('anim-btn-' + itemId).style.display = '';
     }
@@ -877,8 +929,10 @@
         document.getElementById('anim-btn-' + itemId).style.display = 'none';
         document.getElementById('anim-input-' + itemId).value = '';
         document.getElementById('anim-preview-' + itemId).textContent = '';
+        // restore sprite thumbs and hide delete buttons
+        entry.querySelectorAll('.anim-sprite-thumb .btn').forEach(el => el.style.display = 'none');
         location.reload();
-    }
+    }}
     function onInlineStackableChange(select, itemId) {
         const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
         if (select.value === 'false') { maxAmount.value = 1; maxAmount.readOnly = true; maxAmount.style.backgroundColor = '#2a2d3e'; }
