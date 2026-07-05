@@ -27,7 +27,7 @@
                         <option value="">-</option>
                         @foreach (var lt in Model.AllLootTables)
                         {
-                            <option value="@lt.Id">@(lt.LootTableName ?? $"#{lt.Id}")</option>
+                            <option value="@lt.LootTableId">@(lt.LootTableName ?? $"#{lt.Id}")</option>
                         }
                     </select>
                 </div>
@@ -75,7 +75,7 @@
                         <option value="">-</option>
                         @foreach (var lt in Model.AllLootTables)
                         {
-                            <option value="@lt.Id">@(lt.LootTableName ?? $"#{lt.Id}")</option>
+                            <option value="@lt.LootTableId">@(lt.LootTableName ?? $"#{lt.Id}")</option>
                         }
                     </select>
                 </div>

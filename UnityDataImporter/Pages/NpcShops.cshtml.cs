@@ -12,10 +12,10 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     public IEnumerable<LootTable> AllLootTables { get; set; } = [];
     public IReadOnlyDictionary<long, Recipe> RecipesById { get; set; } = new Dictionary<long, Recipe>();
 
-    [BindProperty] public long? NewShopLootTableId { get; set; }
+    [BindProperty] public string? NewShopLootTableId { get; set; }
     [BindProperty] public long TargetShopId { get; set; }
     [BindProperty] public long AddRecipeId { get; set; }
-    [BindProperty] public long? EditLootTableId { get; set; }
+    [BindProperty] public string? EditLootTableId { get; set; }
 
     public async Task OnGetAsync()
     {
