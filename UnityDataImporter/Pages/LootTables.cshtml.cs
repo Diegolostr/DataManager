@@ -25,7 +25,7 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     public async Task<IActionResult> OnPostAddTableAsync()
     {
         var t = await lootTableRepository.AddAsync(NewTableName);
-        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", t?.Id);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", t.LootTableName);
         return RedirectToPage();
     }
 
@@ -47,14 +47,14 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     {
         ModelState.Clear();
         await lootTableRepository.UpdateEntriesAsync(Entries);
-        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", (object?)null);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", (string?)null);
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteEntryAsync(long id)
     {
         await lootTableRepository.DeleteEntryAsync(id);
-        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", id);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", (string?)null);
         return RedirectToPage();
     }
 }

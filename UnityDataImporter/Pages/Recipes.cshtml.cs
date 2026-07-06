@@ -45,7 +45,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         if (!string.IsNullOrWhiteSpace(NewRecipeName))
         {
             var r = await recipeRepository.AddAsync(NewRecipeName, NewRecipeCost);
-            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.Id);
+            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r.RecipeName);
         }
         return RedirectBack();
     }
@@ -55,7 +55,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         ModelState.Clear();
         var items = EditInputItems.Select(e => new RecipeInputItem(e.ItemId, e.Amount)).ToList();
         await recipeRepository.UpdateAsync(id, EditRecipeName, EditRecipeCost, items);
-        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", id);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", EditRecipeName);
         return RedirectBack();
     }
 
@@ -69,14 +69,16 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         ModelState.Clear();
         await recipeRepository.AddInputItemAsync(TargetRecipeId, InputItemId, InputItemAmount);
-        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", TargetRecipeId);
+        var r = await recipeRepository.GetByIdAsync(TargetRecipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.RecipeName);
         return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveInputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveInputItemAsync(recipeId, itemId);
-        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", recipeId);
+        var r = await recipeRepository.GetByIdAsync(recipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.RecipeName);
         return RedirectBack();
     }
 
@@ -84,14 +86,16 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         ModelState.Clear();
         await recipeRepository.AddOutputItemAsync(TargetRecipeId, OutputItemId);
-        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", TargetRecipeId);
+        var r = await recipeRepository.GetByIdAsync(TargetRecipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.RecipeName);
         return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveOutputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveOutputItemAsync(recipeId, itemId);
-        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", recipeId);
+        var r = await recipeRepository.GetByIdAsync(recipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.RecipeName);
         return RedirectBack();
     }
 

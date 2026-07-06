@@ -196,7 +196,7 @@ public class DataApiController(AppDbContext db, IHubContext<DataHub> hub) : Cont
             await db.SaveChangesAsync();
 
             await tx.CommitAsync();
-            await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", existing.Id);
+            await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", existing.LootTableName);
             return Ok(new LootTableDto(existing.Id, existing.LootTableName, savedEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
         }
         catch (Exception ex)
@@ -233,7 +233,7 @@ public class DataApiController(AppDbContext db, IHubContext<DataHub> hub) : Cont
             }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", existing.Id);
+            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", existing.RecipeName);
             return Ok(new RecipeDto(existing.Id, existing.RecipeName, dto.InputItems ?? [], dto.OutputItems ?? [], existing.RecipeCost));
         }
         catch (Exception ex)
@@ -291,7 +291,7 @@ public class DataApiController(AppDbContext db, IHubContext<DataHub> hub) : Cont
             }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
-            await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", existingShop.Id);
+            await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", existingShop.Name);
 
             var createdRecipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
             return Ok(new NpcShopDto(
