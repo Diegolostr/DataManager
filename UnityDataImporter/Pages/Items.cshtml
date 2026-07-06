@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model ItemsModel
 @{
     ViewData["Title"] = "Items";
@@ -235,7 +235,7 @@
     </div>
 
     <div class="filter-bar">
-        <input type="text" id="itemSearch" class="form-control" placeholder="Buscar por ID, nombre o descripcion..." oninput="applyFilters()" />
+        <input type="text" id="itemSearch" class="form-control" placeholder="Buscar por ID, nombre o descripcion... (Enter)" value="@Model.SearchQuery" onkeydown="if(event.key==='Enter')searchItems()" />
         <button class="btn btn-outline-secondary btn-sm" onclick="toggleFilters()">âš™ï¸ Filtros</button>
         <button class="btn btn-outline-danger btn-sm" onclick="clearFilters()">Limpiar</button>
     </div>
