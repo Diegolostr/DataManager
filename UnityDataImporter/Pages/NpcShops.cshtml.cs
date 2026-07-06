@@ -25,11 +25,11 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     [BindProperty] public long AddRecipeId { get; set; }
     [BindProperty] public string? EditLootTableId { get; set; }
 
-    public async Task OnGetAsync(int page = 1)
+    public async Task OnGetAsync(int p = 1)
     {
         var all = (await npcShopRepository.GetAllAsync()).ToList();
         TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
-        CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+        CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
         Shops = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
         AllRecipes = await recipeRepository.GetAllAsync();
         AllLootTables = await lootTableRepository.GetAllAsync();

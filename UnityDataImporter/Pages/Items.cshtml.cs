@@ -60,9 +60,12 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     [BindProperty] public bool DeleteParryAudio { get; set; }
     [BindProperty] public string? EditItemId { get; set; }
 
-    public async Task OnGetAsync(string? itemId, int page = 1)
+    public string? SearchQuery { get; set; }
+
+    public async Task OnGetAsync(string? itemId, int p = 1, string? search = null)
     {
         FilteredItemId = itemId;
+        SearchQuery = search;
         var all = await itemRepository.GetAllAsync();
         AllItemsForLookup = all;
         if (itemId is not null)
@@ -74,8 +77,17 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
         else
         {
             var list = all.ToList();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.ToLower();
+                list = list.Where(i =>
+                    i.Id.ToLower().Contains(q) ||
+                    (i.Name?.ToLower().Contains(q) ?? false) ||
+                    (i.Description?.ToLower().Contains(q) ?? false)
+                ).ToList();
+            }
             TotalPages = (int)Math.Ceiling(list.Count / (double)PageSize);
-            CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+            CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
             Items = list.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
         }
         await LoadLookupsAsync();

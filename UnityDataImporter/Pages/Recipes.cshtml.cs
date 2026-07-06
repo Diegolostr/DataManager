@@ -33,7 +33,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     private IActionResult RedirectBack() =>
         ReturnShopIdPost.HasValue ? RedirectToPage("/NpcShops") : RedirectToPage();
 
-    public async Task OnGetAsync(long? recipeId, long? returnShopId, int page = 1)
+    public async Task OnGetAsync(long? recipeId, long? returnShopId, int p = 1)
     {
         FilteredRecipeId = recipeId;
         ReturnShopId = returnShopId;
@@ -47,7 +47,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         else
         {
             TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
-            CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+            CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
             Recipes = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
         }
         AllItems = await itemRepository.GetAllAsync();

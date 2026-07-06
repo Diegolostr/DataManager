@@ -20,11 +20,11 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     [BindProperty] public List<LootTableEntryEditDto> Entries { get; set; } = [];
     [BindProperty] public string? SaveEntriesTableId { get; set; }
 
-    public async Task OnGetAsync(int page = 1)
+    public async Task OnGetAsync(int p = 1)
     {
         var all = (await lootTableRepository.GetAllAsync()).ToList();
         TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
-        CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+        CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
         LootTables = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
         AllItems = await itemRepository.GetAllAsync();
     }

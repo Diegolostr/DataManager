@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model NpcShopsModel
 @{
     ViewData["Title"] = "NPC Shops";
@@ -154,7 +154,7 @@
         <nav style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.5rem">
             @if (Model.CurrentPage > 1)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?page=@(Model.CurrentPage - 1)">← Anterior</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage - 1)">← Anterior</a>
             }
             @for (int p = 1; p <= Model.TotalPages; p++)
             {
@@ -164,12 +164,12 @@
                 }
                 else
                 {
-                    <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?page=@p">@p</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@p">@p</a>
                 }
             }
             @if (Model.CurrentPage < Model.TotalPages)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?page=@(Model.CurrentPage + 1)">Siguiente →</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage + 1)">Siguiente →</a>
             }
         </nav>
     }

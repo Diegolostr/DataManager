@@ -654,7 +654,7 @@
         <nav style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.5rem">
             @if (Model.CurrentPage > 1)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@(Model.CurrentPage - 1)">Anterior</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/Items?p=@(Model.CurrentPage - 1)&search=@Model.SearchQuery">Anterior</a>
             }
             @for (int p = 1; p <= Model.TotalPages; p++)
             {
@@ -664,12 +664,12 @@
                 }
                 else
                 {
-                    <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@p">@p</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/Items?p=@p&search=@Model.SearchQuery">@p</a>
                 }
             }
             @if (Model.CurrentPage < Model.TotalPages)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@(Model.CurrentPage + 1)">Siguiente</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/Items?p=@(Model.CurrentPage + 1)&search=@Model.SearchQuery">Siguiente</a>
             }
         </nav>
     }
@@ -1034,6 +1034,8 @@
     }
 
     // -- Filters --
+    function searchItems() { var q = document.getElementById('itemSearch').value.trim(); var url = '/Items'; if (q) url += '?search=' + encodeURIComponent(q); window.location.href = url; }
+
     function applyFilters() {
         const q = document.getElementById('itemSearch').value.toLowerCase();
         const type = document.getElementById('f-type').value;
@@ -1061,7 +1063,7 @@
     function clearFilters() {
         document.getElementById('itemSearch').value = '';
         ['f-type','f-rarity','f-slot','f-hold','f-stack','f-block','f-weapon'].forEach(id => document.getElementById(id).value = '');
-        applyFilters();
+        window.location.href = '/Items';
     }
 
     // -- Visibility --
