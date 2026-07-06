@@ -25,9 +25,17 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     [BindProperty] public long AddRecipeId { get; set; }
     [BindProperty] public string? EditLootTableId { get; set; }
 
-    public async Task OnGetAsync(int p = 1)
+    public string? SearchQuery { get; set; }
+
+    public async Task OnGetAsync(int p = 1, string? search = null)
     {
+        SearchQuery = search;
         var all = (await npcShopRepository.GetAllAsync()).ToList();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.ToLower();
+            all = all.Where(s => (s.Name?.ToLower().Contains(q) ?? false) || s.Id.ToString().Contains(q)).ToList();
+        }
         TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
         CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
         Shops = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);

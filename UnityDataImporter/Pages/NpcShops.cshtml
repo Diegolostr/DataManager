@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model NpcShopsModel
 @{
     ViewData["Title"] = "NPC Shops";
@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="filter-bar">
-        <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por nombre o ID..." />
+        <input type="text" id="shopSearch" class="form-control" placeholder="Buscar por nombre o ID... (Enter)" value="@Model.SearchQuery" onkeydown="if(event.key==='Enter'){var q=this.value.trim();window.location.href=q?'/NpcShops?search='+encodeURIComponent(q):'/NpcShops'}" />
     </div>
 
     <!-- Modal Nueva Shop -->
@@ -154,7 +154,7 @@
         <nav style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.5rem">
             @if (Model.CurrentPage > 1)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage - 1)">← Anterior</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage - 1)&search=@Model.SearchQuery">← Anterior</a>
             }
             @for (int p = 1; p <= Model.TotalPages; p++)
             {
@@ -164,12 +164,12 @@
                 }
                 else
                 {
-                    <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@p">@p</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@p&search=@Model.SearchQuery">@p</a>
                 }
             }
             @if (Model.CurrentPage < Model.TotalPages)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage + 1)">Siguiente →</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/NpcShops?p=@(Model.CurrentPage + 1)&search=@Model.SearchQuery">Siguiente →</a>
             }
         </nav>
     }
@@ -191,10 +191,5 @@
         document.getElementById('editLootTableModal').style.display = 'flex';
     }
 
-    document.getElementById('shopSearch').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        document.querySelectorAll('#shopList .shop-entry').forEach(el => {
-            el.style.display = !q || el.dataset.id.includes(q) || el.dataset.name.includes(q) ? '' : 'none';
-        });
-    });
+    
 </script>

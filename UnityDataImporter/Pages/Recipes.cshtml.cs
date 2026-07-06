@@ -33,10 +33,13 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     private IActionResult RedirectBack() =>
         ReturnShopIdPost.HasValue ? RedirectToPage("/NpcShops") : RedirectToPage();
 
-    public async Task OnGetAsync(long? recipeId, long? returnShopId, int p = 1)
+    public string? SearchQuery { get; set; }
+
+    public async Task OnGetAsync(long? recipeId, long? returnShopId, int p = 1, string? search = null)
     {
         FilteredRecipeId = recipeId;
         ReturnShopId = returnShopId;
+        SearchQuery = search;
         var all = (await recipeRepository.GetAllAsync()).ToList();
         if (recipeId.HasValue)
         {
@@ -46,6 +49,11 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         }
         else
         {
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.ToLower();
+                all = all.Where(r => r.RecipeName?.ToLower().Contains(q) ?? false).ToList();
+            }
             TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
             CurrentPage = Math.Clamp(p, 1, Math.Max(1, TotalPages));
             Recipes = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);

@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model RecipesModel
 @{
     ViewData["Title"] = "Recipes";
@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="filter-bar">
-        <input type="text" id="recipeSearch" class="form-control" placeholder="Buscar por nombre..." />
+        <input type="text" id="recipeSearch" class="form-control" placeholder="Buscar por nombre... (Enter)" value="@Model.SearchQuery" onkeydown="if(event.key==='Enter'){var q=this.value.trim();window.location.href=q?'/Recipes?search='+encodeURIComponent(q):'/Recipes'}" />
     </div>
 
     <!-- Modal Nueva Recipe -->
@@ -219,7 +219,7 @@
         <nav style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.5rem">
             @if (Model.CurrentPage > 1)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@(Model.CurrentPage - 1)">← Anterior</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@(Model.CurrentPage - 1)&search=@Model.SearchQuery">← Anterior</a>
             }
             @for (int p = 1; p <= Model.TotalPages; p++)
             {
@@ -229,12 +229,12 @@
                 }
                 else
                 {
-                    <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@p">@p</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@p&search=@Model.SearchQuery">@p</a>
                 }
             }
             @if (Model.CurrentPage < Model.TotalPages)
             {
-                <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@(Model.CurrentPage + 1)">Siguiente →</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/Recipes?p=@(Model.CurrentPage + 1)&search=@Model.SearchQuery">Siguiente →</a>
             }
         </nav>
     }
@@ -270,12 +270,7 @@
         if (e.target.closest('.d-flex.gap-2')) e.preventDefault();
     }
 
-    document.getElementById('recipeSearch').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        document.querySelectorAll('#recipeList .recipe-entry').forEach(el => {
-            el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
-        });
-    });
+    
 
     const _returnShopId = '@Model.ReturnShopId';
     if (_returnShopId) {
