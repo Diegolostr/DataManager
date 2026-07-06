@@ -700,7 +700,7 @@
             .replace(/&lt;\/color&gt;/g,'</span>')
             .replace(/&lt;size=([^&]+)&gt;/g,'<span style="font-size:$1">')
             .replace(/&lt;\/size&gt;/g,'</span>')
-            .replace(/&lt;sprite name=&quot;([^&]*)&quot;&gt;/g,'<span style="background:#444;border-radius:3px;padding:0 4px;font-size:0.7rem">[sprite:$1]</span>')
+            .replace(/&lt;sprite name=&quot;([^&]*)&quot;&gt;/g,'<span style="background:#444;padding:0 4px;font-size:0.7rem">[sprite:$1]</span>')
             .replace(/\\n/g,'<br>');
     }
     function rtInsert(text) {
