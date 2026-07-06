@@ -101,6 +101,7 @@
                             <span></span>
                         </div>
                         <form method="post" asp-page-handler="SaveEntries" id="form-lt-@table.Id">
+                        <input type="hidden" name="SaveEntriesTableId" value="@table.LootTableId" />
                         @{ int ei = 0; }
                         @foreach (var entry in table.Entries)
                         {
@@ -131,6 +132,7 @@
                         {
                             <form method="post" asp-page-handler="DeleteEntry" id="del-entry-@entry.Id" style="display:none">
                                 <input type="hidden" name="id" value="@entry.Id" />
+                                <input type="hidden" name="lootTableId" value="@table.LootTableId" />
                             </form>
                         }
                         <div id="save-bar-@table.Id" style="display:none; justify-content:flex-end; padding: 0.5rem 0.5rem 0; gap:0.4rem;">
