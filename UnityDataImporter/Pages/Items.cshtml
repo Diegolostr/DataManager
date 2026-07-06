@@ -33,6 +33,16 @@
     <div id="addModal" class="modal-overlay">
         <div class="modal-card modal-card-lg">
             <h4>➕ Nuevo Item</h4>
+            <div class="mb-3" style="border-bottom:1px solid var(--border-subtle);padding-bottom:0.75rem">
+                <label>📋 Copiar de item existente</label>
+                <select class="form-select" id="copyFromItem" onchange="copyItemData(this.value)">
+                    <option value="">- Ninguno -</option>
+                    @foreach (var item in Model.Items)
+                    {
+                        <option value="@item.Id">@(item.Name ?? item.Id)</option>
+                    }
+                </select>
+            </div>
             <form method="post" asp-page-handler="AddItem" enctype="multipart/form-data">
                 <div class="modal-form-grid">
                     <div class="mb-3">
@@ -313,9 +323,7 @@
                         <a class="item-row-id" href="/Items?itemId=@item.Id" onclick="event.stopPropagation()">@(item.Name ?? item.Id)</a>
                     </div>
                     <div onclick="event.stopPropagation()" style="display:flex;gap:0.5rem;align-items:center">
-                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="enableEdit('@item.Id')">✏️ Editar</button>
-                        <button type="button" class="btn btn-success btn-sm" id="btn-save-@item.Id" style="display:none" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-@item.Id" style="display:none" onclick="cancelEdit('@item.Id')">✕ Cancelar</button>
+                        <button type="button" class="btn btn-success btn-sm" onclick="document.getElementById('form-@item.Id').submit()">💾 Guardar</button>
                         <form method="post" asp-page-handler="DeleteItem" style="margin:0" onsubmit="return confirm('¿Eliminar @item.Id?')">
                             <input type="hidden" name="id" value="@item.Id" />
                             <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
@@ -343,25 +351,25 @@
                     <div class="icard">
                         <div class="icard-header">📋 Item Basic Data</div>
                         <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Item Name</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Name" value="@item.Name" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Item Name</span><span class="ivalue"><input class="form-control form-control-sm" name="EditItem.Name" value="@item.Name" /></span></div>
                             <div class="ifield"><span class="ilabel">Description</span><span class="ivalue">
                                 <input type="hidden" name="EditItem.Description" id="desc-hidden-@item.Id" value="@item.Description" />
                                 <span class="desc-display" id="desc-display-@item.Id" onclick="openDescEditor('@item.Id')" title="Click para editar">@(item.Description ?? "-")</span>
                             </span></div>
                             <div class="ifield"><span class="ilabel">Item ID</span><span class="ivalue"><code>@item.Id</code></span></div>
-                            <div class="ifield"><span class="ilabel">Size X</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeX" value="@item.Size?.X" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Size Y</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeY" value="@item.Size?.Y" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Size X</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeX" value="@item.Size?.X" /></span></div>
+                            <div class="ifield"><span class="ilabel">Size Y</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.SizeY" value="@item.Size?.Y" /></span></div>
                             <div class="ifield">
                                 <span class="ilabel">Is Stackable</span>
                                 <span class="ivalue">
-                                    <select class="form-select form-select-sm" name="EditItem.IsStackable" onchange="onInlineStackableChange(this, '@item.Id')" disabled>
+                                    <select class="form-select form-select-sm" name="EditItem.IsStackable" onchange="onInlineStackableChange(this, '@item.Id')">
                                         <option value="">-</option>
                                         <option value="true" selected="@(item.IsStackable == true ? "selected" : null)">Sí</option>
                                         <option value="false" selected="@(item.IsStackable == false ? "selected" : null)">No</option>
                                     </select>
                                 </span>
                             </div>
-                            <div class="ifield"><span class="ilabel">Max Stack</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.MaxAmount" id="inlineMaxAmount-@item.Id" value="@item.MaxAmount" disabled @(item.IsStackable == false ? "readonly" : "") /></span></div>
+                            <div class="ifield"><span class="ilabel">Max Stack</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.MaxAmount" id="inlineMaxAmount-@item.Id" value="@item.MaxAmount" @(item.IsStackable == false ? "readonly" : "") /></span></div>
                             <div class="ifield">
                                 <span class="ilabel">Animations</span>
                                 <span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
@@ -374,13 +382,13 @@
                                             var b64 = Convert.ToBase64String(animBytes[ai]);
                                             <div class="anim-sprite-thumb" data-anim-index="@ai" style="position:relative;display:inline-flex">
                                                 <img src="data:image/png;base64,@b64" style="width:32px;height:32px;object-fit:contain;image-rendering:pixelated;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)" />
-                                                <button type="button" class="btn btn-danger btn-xs edit-only" style="position:absolute;top:-4px;right:-4px;padding:0 3px;font-size:0.6rem;line-height:1.2;display:none" onclick="deleteAnimation('@item.Id', @ai, this.closest('.anim-sprite-thumb'))">✕</button>
+                                                <button type="button" class="btn btn-danger btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0 3px;font-size:0.6rem;line-height:1.2" onclick="deleteAnimation('@item.Id', @ai, this.closest('.anim-sprite-thumb'))">✕</button>
                                             </div>
                                         }
                                     }
                                     </div>
                                     <input type="file" class="form-control form-control-sm" id="anim-input-@item.Id" multiple accept="image/*" style="display:none" onchange="onAnimationsChange('@item.Id')" />
-                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="anim-btn-@item.Id" style="display:none" onclick="document.getElementById('anim-input-@item.Id').click()">+ Añadir sprites</button>
+                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="anim-btn-@item.Id" onclick="document.getElementById('anim-input-@item.Id').click()">+ Añadir sprites</button>
                                     <span id="anim-preview-@item.Id" style="font-size:0.75rem;color:var(--text-muted)"></span>
                                 </span>
                             </div>
@@ -396,7 +404,7 @@
                                         <span style="width:32px;height:32px;background:var(--border-subtle);border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-faint)">?</span>
                                     }
                                     <input type="file" id="icon-input-@item.Id" name="EditIcon" accept=".png,.jpg,.jpeg" style="display:none" />
-                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="icon-btn-@item.Id" style="display:none" onclick="document.getElementById('icon-input-@item.Id').click()">Cambiar</button>
+                                    <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="icon-btn-@item.Id" onclick="document.getElementById('icon-input-@item.Id').click()">Cambiar</button>
                                 </span>
                             </div>
                         </div>
@@ -406,31 +414,31 @@
                         <div class="icard-header">🗂️ Item Enums</div>
                         <div class="icard-body">
                             <div class="ifield"><span class="ilabel">Item Type</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.ItemType" onchange="onItemTypeChange(this, '@item.Id')" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.ItemType" onchange="onItemTypeChange(this, '@item.Id')">
                                     <option value="">-</option>
                                     @foreach (var t in Model.ItemTypes) { <option value="@t" selected="@(item.ItemType == t ? "selected" : null)">@t</option> }
                                 </select>
                             </span></div>
                             <div class="ifield"><span class="ilabel">Item Rarity</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.ItemRarity" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.ItemRarity">
                                     <option value="">-</option>
                                     @foreach (var r in Model.Rarities) { <option value="@r" selected="@(item.ItemRarity == r ? "selected" : null)">@r</option> }
                                 </select>
                             </span></div>
                             <div class="ifield"><span class="ilabel">Item Sound</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.ItemSoundType" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.ItemSoundType">
                                     <option value="">-</option>
                                     @foreach (var s in Model.InventorySounds) { <option value="@s.Id" selected="@(item.ItemSoundType == s.Id ? "selected" : null)">@s.Sound</option> }
                                 </select>
                             </span></div>
                             <div class="ifield" id="field-holdtype-@item.Id" style="display:@(new[]{ "sword","bow","book","shield" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")"><span class="ilabel">Hold Type</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.HoldType" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.HoldType">
                                     <option value="">-</option>
                                     @foreach (var h in Model.HoldTypes) { <option value="@h" selected="@(item.HoldType == h ? "selected" : null)">@h</option> }
                                 </select>
                             </span></div>
                             <div class="ifield" id="field-equipslot-@item.Id" style="display:@(new[]{ "sword","bow","book","armor","shield","weapon","accesory" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")"><span class="ilabel">Equipment Slot</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.EquipmentSlot" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.EquipmentSlot">
                                     <option value="">-</option>
                                     @foreach (var s in Model.EquipmentSlots) { <option value="@s" selected="@(item.EquipmentSlot == s ? "selected" : null)">@s</option> }
                                 </select>
@@ -441,8 +449,8 @@
                     <div class="icard">
                         <div class="icard-header">🛒 Shop</div>
                         <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Buy Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.BuyAmount" value="@item.BuyAmount" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Sell Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.SellAmount" value="@item.SellAmount" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Buy Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.BuyAmount" value="@item.BuyAmount" /></span></div>
+                            <div class="ifield"><span class="ilabel">Sell Cost</span><span class="ivalue"><input class="form-control form-control-sm" type="number" name="EditItem.SellAmount" value="@item.SellAmount" /></span></div>
                         </div>
                     </div>
 
@@ -456,12 +464,12 @@
                                     <span class="ilabel">@(sa.StatNavigation?.Id ?? sa.Stat)</span>
                                     <span class="ivalue d-flex align-items-center gap-2">
                                         @(sa.Amount?.ToString() ?? "-")
-                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 edit-only" onclick="deleteStat('@item.Id', @sa.Id, this.closest('.ifield'))">✕</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deleteStat('@item.Id', @sa.Id, this.closest('.ifield'))">✕</button>
                                     </span>
                                 </div>
                             }
                             </div>
-                            <div class="ifield edit-only" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
                                 <span class="ilabel" style="color:var(--text-muted)">+ Stat</span>
                                 <span class="ivalue"><button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAddStat('@item.Id')">+</button></span>
                             </div>
@@ -477,12 +485,12 @@
                                                 <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(ie.EventType.Icon)" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated" />
                                             }
                                             <span class="badge bg-secondary">@(ie.EventType?.Id ?? ie.EventTypeId ?? "#" + ie.Id)</span>
-                                            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 edit-only" onclick="deleteEvent('@item.Id', @ie.Id, this.closest('.ifield'))">✕</button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deleteEvent('@item.Id', @ie.Id, this.closest('.ifield'))">✕</button>
                                         </span>
                                     </div>
                                 }
                                 </div>
-                                <div class="ifield edit-only" style="padding-top:0.5rem">
+                                <div class="ifield" style="padding-top:0.5rem">
                                     <span class="ilabel" style="color:var(--text-muted)">+ Event</span>
                                     <span class="ivalue"><button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAddEvent('@item.Id')">+</button></span>
                                 </div>
@@ -493,10 +501,10 @@
                     <div class="icard" id="card-weapon-@item.Id" style="display:@(new[]{ "sword","bow","weapon" }.Contains(item.ItemType?.ToLower() ?? "") ? "" : "none")">
                         <div class="icard-header">⚔️ Weapon Info</div>
                         <div class="icard-body">
-                            <div class="ifield"><span class="ilabel">Damage</span><span class="ivalue"><input class="form-control form-control-sm" type="number" id="wInline-damage-@item.Id" value="@item.Weapon?.Damage" oninput="syncWeapon('@item.Id')" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Heaviness</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-heaviness-@item.Id" value="@item.Weapon?.Heaviness" oninput="syncWeapon('@item.Id')" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Cooldown</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-cooldown-@item.Id" value="@item.Weapon?.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="syncWeapon('@item.Id')" disabled /></span></div>
-                            <div class="ifield"><span class="ilabel">Ammo</span><span class="ivalue"><input class="form-control form-control-sm" id="wInline-ammo-@item.Id" value="@item.Weapon?.Ammo" list="ammoItemList" autocomplete="off" oninput="syncWeapon('@item.Id')" disabled /></span></div>
+                            <div class="ifield"><span class="ilabel">Damage</span><span class="ivalue"><input class="form-control form-control-sm" type="number" id="wInline-damage-@item.Id" value="@item.Weapon?.Damage" oninput="syncWeapon('@item.Id')" /></span></div>
+                            <div class="ifield"><span class="ilabel">Heaviness</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-heaviness-@item.Id" value="@item.Weapon?.Heaviness" oninput="syncWeapon('@item.Id')" /></span></div>
+                            <div class="ifield"><span class="ilabel">Cooldown</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" id="wInline-cooldown-@item.Id" value="@item.Weapon?.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="syncWeapon('@item.Id')" /></span></div>
+                            <div class="ifield"><span class="ilabel">Ammo</span><span class="ivalue"><input class="form-control form-control-sm" id="wInline-ammo-@item.Id" value="@item.Weapon?.Ammo" list="ammoItemList" autocomplete="off" oninput="syncWeapon('@item.Id')" /></span></div>
                         </div>
                     </div>
 
@@ -504,22 +512,22 @@
                         <div class="icard-header">🛡️ Block Settings</div>
                         <div class="icard-body">
                             <div class="ifield"><span class="ilabel">Can Block</span><span class="ivalue">
-                                <select class="form-select form-select-sm" name="EditItem.CanBlock" onchange="onCanBlockChange(this, '@item.Id')" disabled>
+                                <select class="form-select form-select-sm" name="EditItem.CanBlock" onchange="onCanBlockChange(this, '@item.Id')">
                                     <option value="">-</option>
                                     <option value="true" selected="@(item.CanBlock == true ? "selected" : null)">Sí</option>
                                     <option value="false" selected="@(item.CanBlock == false ? "selected" : null)">No</option>
                                 </select>
                             </span></div>
-                            <div class="ifield" id="field-blockamount-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" disabled /></span></div>
+                            <div class="ifield" id="field-blockamount-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Block Amount</span><span class="ivalue"><input class="form-control form-control-sm" type="number" step="0.01" name="EditItem.BlockAmount" value="@item.BlockAmount?.ToString("0.##")" /></span></div>
                             <div class="ifield" id="field-blocksound-@item.Id" style="display:@(item.CanBlock == true ? "" : "none")"><span class="ilabel">Block Sound</span><span class="ivalue" style="display:flex;flex-direction:column;gap:0.25rem">
                                 @if (item.BlockSoundsNavigation != null)
                                 {
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.BlockSoundsNavigation.Name ?? $"#{item.BlockSoundsNavigation.Id}")</span>
                                 }
-                                <input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" disabled />
+                                <input class="form-control form-control-sm" type="file" name="EditBlockSound" accept="audio/*" />
                                 @if (item.BlockSoundsNavigation != null)
                                 {
-                                    <button type="button" class="btn btn-outline-danger btn-xs edit-only" style="display:none" onclick="markDeleteBlockSound('@item.Id')">🗑️ Eliminar Block Sound</button>
+                                    <button type="button" class="btn btn-outline-danger btn-xs" onclick="markDeleteBlockSound('@item.Id')">🗑️ Eliminar Block Sound</button>
                                     <span id="del-blocksound-label-@item.Id" style="display:none;font-size:0.75rem;color:#f0b0b0">⚠️ Se eliminará al guardar</span>
                                 }
                             </span></div>
@@ -528,10 +536,10 @@
                                 {
                                     <span style="font-size:0.75rem;color:var(--text-muted)">🔊 @(item.ParryAudioNavigation.Name ?? $"#{item.ParryAudioNavigation.Id}")</span>
                                 }
-                                <input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" disabled />
+                                <input class="form-control form-control-sm" type="file" name="EditParryAudio" accept="audio/*" />
                                 @if (item.ParryAudioNavigation != null)
                                 {
-                                    <button type="button" class="btn btn-outline-danger btn-xs edit-only" style="display:none" onclick="markDeleteParryAudio('@item.Id')">🗑️ Eliminar Parry Audio</button>
+                                    <button type="button" class="btn btn-outline-danger btn-xs" onclick="markDeleteParryAudio('@item.Id')">🗑️ Eliminar Parry Audio</button>
                                     <span id="del-parryaudio-label-@item.Id" style="display:none;font-size:0.75rem;color:#f0b0b0">⚠️ Se eliminará al guardar</span>
                                 }
                             </span></div>
@@ -559,12 +567,12 @@
                                     {
                                         <span>🔊 @maHitSounds.Count</span>
                                     }
-                                    <button type="button" class="btn btn-outline-info btn-sm edit-only" onclick="openEditMagic('@item.Id', @ma.Id, '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(ma.ProjectileSpeed?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), '@(ma.EffectType ?? "")', @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"), @maHitSoundsB64)">✏️</button>
-                                    <button type="button" class="btn btn-outline-danger btn-sm edit-only" onclick="deleteMagic('@item.Id', @ma.Id, this.closest('.magic-attack-row'))">🗑️</button>
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="openEditMagic('@item.Id', @ma.Id, '@ma.MagicType', @(ma.MagicDamage?.ToString() ?? "null"), @(ma.Cooldown?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(ma.ProjectileSpeed?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), '@(ma.EffectType ?? "")', @(ma.ManaConsumption?.ToString() ?? "null"), @(ma.MaxCompanions?.ToString() ?? "null"), @maHitSoundsB64)">✏️</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteMagic('@item.Id', @ma.Id, this.closest('.magic-attack-row'))">🗑️</button>
                                 </div>
                             }
                             </div>
-                            <div class="ifield edit-only" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+                            <div class="ifield" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
                                 <span class="ilabel" style="color:var(--text-muted)">+ Attack</span>
                                 <span class="ivalue"><button type="button" class="btn btn-outline-success btn-sm" onclick="openAddMagic('@item.Id')">+</button></span>
                             </div>
@@ -645,6 +653,52 @@
     const EQUIP_SLOT_TYPES = ['sword','bow','book','armor','shield','weapon','accesory'];
     const HOLD_TYPES = ['sword','bow','book','shield'];
 
+    // ── Item data for copy ─────────────────────────────────────────────
+    const itemsData = {
+        @foreach (var item in Model.Items)
+        {
+            <text>'@item.Id': {
+                name: '@(item.Name?.Replace("'", "\\'") ?? "")',
+                description: '@(item.Description?.Replace("'", "\\'").Replace("\n", "\\n") ?? "")',
+                itemType: '@(item.ItemType ?? "")',
+                itemRarity: '@(item.ItemRarity ?? "")',
+                equipmentSlot: '@(item.EquipmentSlot ?? "")',
+                holdType: '@(item.HoldType ?? "")',
+                itemSoundType: '@(item.ItemSoundType?.ToString() ?? "")',
+                isStackable: '@(item.IsStackable?.ToString().ToLower() ?? "")',
+                maxAmount: '@(item.MaxAmount?.ToString() ?? "")',
+                buyAmount: '@(item.BuyAmount?.ToString() ?? "")',
+                sellAmount: '@(item.SellAmount?.ToString() ?? "")',
+                canBlock: '@(item.CanBlock?.ToString().ToLower() ?? "")',
+                blockAmount: '@(item.BlockAmount?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
+            },
+            </text>
+        }
+    };
+
+    function copyItemData(itemId) {
+        const d = itemsData[itemId];
+        if (!d) return;
+        const f = document.querySelector('#addModal form');
+        f.querySelector('[name="NewItem.Name"]').value = d.name;
+        f.querySelector('[name="NewItem.Description"]').value = d.description;
+        f.querySelector('[name="NewItem.ItemType"]').value = d.itemType;
+        f.querySelector('[name="NewItem.ItemRarity"]').value = d.itemRarity;
+        f.querySelector('[name="NewItem.EquipmentSlot"]').value = d.equipmentSlot;
+        f.querySelector('[name="NewItem.HoldType"]').value = d.holdType;
+        f.querySelector('[name="NewItem.ItemSoundType"]').value = d.itemSoundType;
+        f.querySelector('[name="NewItem.IsStackable"]').value = d.isStackable;
+        f.querySelector('[name="NewItem.MaxAmount"]').value = d.maxAmount;
+        f.querySelector('[name="NewItem.BuyAmount"]').value = d.buyAmount;
+        f.querySelector('[name="NewItem.SellAmount"]').value = d.sellAmount;
+        f.querySelector('[name="NewItem.CanBlock"]').value = d.canBlock;
+        f.querySelector('[name="NewItem.BlockAmount"]').value = d.blockAmount;
+        // trigger visibility updates
+        onNewItemTypeChange(f.querySelector('[name="NewItem.ItemType"]'));
+        onNewCanBlockChange(f.querySelector('[name="NewItem.CanBlock"]'));
+        onStackableChange(f.querySelector('[name="NewItem.IsStackable"]'));
+    }
+
     // ── Pending state per item ──────────────────────────────────────────────
     const pending = {};
     function getState(itemId) {
@@ -664,8 +718,6 @@
     // ── Description editor ───────────────────────────────────────────────
     let _descItemId = null;
     function openDescEditor(itemId) {
-        const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
-        if (!entry?.classList.contains('editing')) return;
         _descItemId = itemId;
         const val = document.getElementById('desc-hidden-' + itemId).value;
         document.getElementById('descTextarea').value = val;
@@ -1004,55 +1056,7 @@
         ['field-blockamount-','field-blocksound-','field-parryaudio-'].forEach(p => document.getElementById(p + itemId).style.display = canBlock === 'true' ? '' : 'none');
     }
 
-    // ── Edit mode ───────────────────────────────────────────────────────────
-    function enableEdit(itemId) {
-        const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
-        entry.open = true;
-        const form = document.getElementById('form-' + itemId);
-        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = false);
-        entry.classList.add('editing');
-        applyVisibility(itemId);
-        document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = 'none';
-        document.getElementById('btn-save-' + itemId).style.display = '';
-        document.getElementById('btn-cancel-' + itemId).style.display = '';
-        // show per-sprite delete buttons and delete-audio buttons
-        entry.querySelectorAll('.anim-sprite-thumb .btn, .edit-only').forEach(el => el.style.display = '');
-        document.getElementById('icon-btn-' + itemId).style.display = '';
-        document.getElementById('anim-btn-' + itemId).style.display = '';
-        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => {
-            el.addEventListener('change', () => getState(itemId).formDirty = true, { once: true });
-        });
-    }
-    function cancelEdit(itemId) {
-        const s = pending[itemId];
-        const hasChanges = s && (
-            s.formDirty ||
-            s.stats.length || s.deletedStats.length ||
-            s.events.length || s.deletedEvents.length ||
-            s.weapon || s.magic.length || s.deletedMagic.length ||
-            s.animations || s.deleteAnimations.length ||
-            s.deleteBlockSound || s.deleteParryAudio ||
-            document.getElementById('icon-input-' + itemId)?.value ||
-            document.getElementById('anim-input-' + itemId)?.value
-        );
-        const entry = document.querySelector(`.item-entry[data-id="${itemId.toLowerCase()}"]`);
-        const form = document.getElementById('form-' + itemId);
-        form.reset();
-        form.querySelectorAll('input:not([type=hidden]), select').forEach(el => el.disabled = true);
-        entry.classList.remove('editing');
-        delete pending[itemId];
-        applyVisibility(itemId);
-        document.querySelector(`[onclick="enableEdit('${itemId}')"]`).style.display = '';
-        document.getElementById('btn-save-' + itemId).style.display = 'none';
-        document.getElementById('btn-cancel-' + itemId).style.display = 'none';
-        document.getElementById('icon-btn-' + itemId).style.display = 'none';
-        document.getElementById('icon-input-' + itemId).value = '';
-        document.getElementById('anim-btn-' + itemId).style.display = 'none';
-        document.getElementById('anim-input-' + itemId).value = '';
-        document.getElementById('anim-preview-' + itemId).textContent = '';
-        entry.querySelectorAll('.anim-sprite-thumb .btn, .edit-only').forEach(el => el.style.display = 'none');
-        if (hasChanges) location.reload();
-    }
+    // ── Edit mode (removed - always editable) ───────────────────────────
     function onInlineStackableChange(select, itemId) {
         const maxAmount = document.getElementById('inlineMaxAmount-' + itemId);
         if (select.value === 'false') { maxAmount.value = 1; maxAmount.readOnly = true; maxAmount.style.backgroundColor = '#2a2d3e'; }

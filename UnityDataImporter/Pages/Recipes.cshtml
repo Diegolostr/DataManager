@@ -115,7 +115,6 @@
 
                 <summary class="recipe-header" onclick="handleRecipeSummary(event, @recipe.Id)">
                     <div class="d-flex align-items-center gap-3">
-                        <!-- icono del primer output item -->
                         @{
                             var firstOut = outputItems.FirstOrDefault();
                             var firstOutItem = firstOut != null ? Model.ItemsById.GetValueOrDefault(firstOut) : null;
@@ -124,28 +123,13 @@
                         {
                             <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(firstOutItem.Icon)" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;flex-shrink:0" />
                         }
-                        <!-- vista -->
-                        <span class="recipe-name recipe-view-name">@recipe.RecipeName</span>
-                        @if (recipe.RecipeCost.HasValue)
-                        {
-                            <span class="badge bg-warning text-dark recipe-view-cost">💰 @recipe.RecipeCost</span>
-                        }
-                        else
-                        {
-                            <span class="recipe-view-cost"></span>
-                        }
-                        <!-- edición -->
                         <input type="text" form="form-recipe-@recipe.Id" name="EditRecipeName" value="@recipe.RecipeName"
-                               class="form-control form-control-sm recipe-edit-field" style="display:none;max-width:200px" />
+                               class="form-control form-control-sm" style="max-width:200px" />
                         <input type="text" inputmode="numeric" form="form-recipe-@recipe.Id" name="EditRecipeCost" value="@recipe.RecipeCost"
-                               class="form-control form-control-sm recipe-edit-field" style="display:none;max-width:90px" placeholder="Coste" />
+                               class="form-control form-control-sm" style="max-width:90px" placeholder="Coste" />
                     </div>
                     <div class="d-flex gap-2 align-items-center" onclick="event.stopPropagation()">
-                        <div id="save-bar-recipe-@recipe.Id" style="display:none; gap:0.4rem" class="d-flex">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditRecipe(@recipe.Id)">Cancelar</button>
-                            <button type="submit" form="form-recipe-@recipe.Id" class="btn btn-success btn-sm">💾 Guardar</button>
-                        </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm recipe-btn-edit" onclick="toggleEditRecipe(@recipe.Id)">✏️</button>
+                        <button type="submit" form="form-recipe-@recipe.Id" class="btn btn-success btn-sm">💾 Guardar</button>
                         <button type="submit" form="del-recipe-@recipe.Id" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
                     </div>
                 </summary>
@@ -173,12 +157,12 @@
                                         <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(inputItem.Icon)" class="recipe-item-icon" />
                                     }
                                     <span class="recipe-item-name">@(inputItem?.Name ?? input.ItemId)</span>
-                                    <span class="badge bg-secondary recipe-view-amount">x@(input.Amount)</span>
+                                    <span class="badge bg-secondary">x@(input.Amount)</span>
                                     <input type="hidden" form="form-recipe-@recipe.Id" name="EditInputItems[@ri2].ItemId" value="@input.ItemId" />
                                     <input type="text" inputmode="numeric" form="form-recipe-@recipe.Id"
                                            name="EditInputItems[@ri2].Amount"
-                                           class="form-control form-control-sm recipe-edit-amount" data-index="@ri2"
-                                           value="@input.Amount" style="display:none;max-width:60px" />
+                                           class="form-control form-control-sm"
+                                           value="@input.Amount" style="max-width:60px" />
                                     <form method="post" asp-page-handler="RemoveInputItem" id="del-input-@recipe.Id-@ri2" style="display:none">
                                         <input type="hidden" name="recipeId" value="@recipe.Id" />
                                         <input type="hidden" name="itemId" value="@input.ItemId" />
@@ -249,35 +233,7 @@
     }
 
     function handleRecipeSummary(e, id) {
-        // si el click viene de los botones de acción, no togglamos el details
         if (e.target.closest('.d-flex.gap-2')) e.preventDefault();
-    }
-
-    function toggleEditRecipe(id) {
-        const entry = document.querySelector(`.recipe-entry[data-id="${id}"]`);
-        const editing = entry.classList.contains('editing');
-        if (!editing) {
-            entry.open = true;
-            entry.classList.add('editing');
-            entry.querySelectorAll('.recipe-view-name, .recipe-view-cost').forEach(el => el.style.display = 'none');
-            entry.querySelectorAll('.recipe-edit-field').forEach(el => el.style.display = '');
-            entry.querySelectorAll('.recipe-view-amount').forEach(el => el.style.display = 'none');
-            entry.querySelectorAll('.recipe-edit-amount').forEach(el => el.style.display = '');
-            document.getElementById('save-bar-recipe-' + id).style.display = 'flex';
-        } else {
-            cancelEditRecipe(id);
-        }
-    }
-
-    function cancelEditRecipe(id) {
-        const entry = document.querySelector(`.recipe-entry[data-id="${id}"]`);
-        entry.classList.remove('editing');
-        entry.querySelectorAll('.recipe-edit-field, .recipe-edit-amount').forEach(el => {
-            el.value = el.defaultValue;
-            el.style.display = 'none';
-        });
-        entry.querySelectorAll('.recipe-view-name, .recipe-view-cost, .recipe-view-amount').forEach(el => el.style.display = '');
-        document.getElementById('save-bar-recipe-' + id).style.display = 'none';
     }
 
     document.getElementById('recipeSearch').addEventListener('input', function () {
