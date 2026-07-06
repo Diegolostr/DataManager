@@ -18,6 +18,7 @@
             else
             {
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
+            <button type="button" class="btn btn-success px-4" onclick="saveAllRecipes()">💾 Guardar todo</button>
             }
             <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addRecipeModal').style.display='flex'">+ Nueva Recipe</button>
         </div>
@@ -129,7 +130,6 @@
                                class="form-control form-control-sm" style="max-width:90px" placeholder="Coste" />
                     </div>
                     <div class="d-flex gap-2 align-items-center" onclick="event.stopPropagation()">
-                        <button type="submit" form="form-recipe-@recipe.Id" class="btn btn-success btn-sm">💾 Guardar</button>
                         <button type="submit" form="del-recipe-@recipe.Id" class="btn btn-outline-danger btn-sm">🗑️ Eliminar</button>
                     </div>
                 </summary>
@@ -241,6 +241,14 @@
 </div>
 
 <script>
+    const dirtyRecipeForms = new Set();
+
+    function saveAllRecipes() {
+        if (dirtyRecipeForms.size === 0) { alert('No hay cambios para guardar'); return; }
+        const firstId = dirtyRecipeForms.values().next().value;
+        document.getElementById('form-recipe-' + firstId).submit();
+    }
+
     function toggleAllFoldouts() {
         const btn = document.querySelector('[onclick="toggleAllFoldouts()"]');
         const entries = document.querySelectorAll('#recipeList .recipe-entry');
@@ -277,4 +285,12 @@
             form.appendChild(inp);
         });
     }
+
+    document.querySelectorAll('[id^="form-recipe-"] input').forEach(el => {
+        el.addEventListener('input', () => {
+            const form = el.closest('[id^="form-recipe-"]') || el.form;
+            const formId = (form?.id || el.getAttribute('form') || '').replace('form-recipe-', '');
+            if (formId) dirtyRecipeForms.add(formId);
+        }, { once: true });
+    });
 </script>

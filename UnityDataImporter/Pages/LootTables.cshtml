@@ -12,6 +12,7 @@
         <h1>🎲 Loot Tables</h1>
         <div class="d-flex gap-2 align-items-center">
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAllFoldouts()">⊟ Colapsar todo</button>
+            <button type="button" class="btn btn-success px-4" onclick="saveAllLt()">💾 Guardar todo</button>
             <button type="button" class="btn btn-primary px-4" onclick="document.getElementById('addTableModal').style.display='flex'">+ Nueva Loot Table</button>
         </div>
     </div>
@@ -131,7 +132,7 @@
                                 <input type="hidden" name="lootTableId" value="@table.LootTableId" />
                             </form>
                         }
-                        <div style="display:flex; justify-content:flex-end; padding: 0.5rem 0.5rem 0; gap:0.4rem;">
+                        <div style="display:none">
                             <button type="submit" form="form-lt-@table.Id" class="btn btn-success btn-sm">💾 Guardar</button>
                         </div>
                     }
@@ -168,6 +169,14 @@
 </div>
 
 <script>
+    const dirtyLtForms = new Set();
+
+    function saveAllLt() {
+        if (dirtyLtForms.size === 0) { alert('No hay cambios para guardar'); return; }
+        const firstId = dirtyLtForms.values().next().value;
+        document.getElementById('form-lt-' + firstId).submit();
+    }
+
     function toggleAllFoldouts() {
         const btn = document.querySelector('[onclick="toggleAllFoldouts()"]');
         const entries = document.querySelectorAll('#ltList .lt-entry');
@@ -186,5 +195,13 @@
         document.querySelectorAll('#ltList .lt-entry').forEach(el => {
             el.style.display = !q || el.dataset.name.includes(q) ? '' : 'none';
         });
+    });
+
+    document.querySelectorAll('[id^="form-lt-"] input').forEach(el => {
+        el.addEventListener('input', () => {
+            const form = el.closest('form');
+            const tableId = form.id.replace('form-lt-', '');
+            dirtyLtForms.add(tableId);
+        }, { once: true });
     });
 </script>
