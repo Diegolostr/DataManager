@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using UnityDataImporter.Api;
 using UnityDataImporter.Data;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Utils;
 
 namespace UnityDataImporter.Controllers;
@@ -29,7 +31,7 @@ public class ApiKeyAuthAttribute : Attribute, IAsyncActionFilter
 [Route("api")]
 [AllowAnonymous]
 [ApiKeyAuth]
-public class DataApiController(AppDbContext db) : ControllerBase
+public class DataApiController(AppDbContext db, IHubContext<DataHub> hub) : ControllerBase
 {
     // GET /api/items
     [HttpGet("items")]
@@ -83,6 +85,19 @@ public class DataApiController(AppDbContext db) : ControllerBase
         return Ok(MapItem(item, magicAttacks, itemEvents, stats));
     }
 
+    // GET /api/recipes/{name}
+    [HttpGet("recipes/{name}")]
+    public async Task<IActionResult> GetRecipe(string name)
+    {
+        var r = await db.Recipes.FirstOrDefaultAsync(r => r.RecipeName == name);
+        if (r is null) return NotFound();
+        return Ok(new RecipeDto(
+            r.Id, r.RecipeName,
+            JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
+            JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
+            r.RecipeCost));
+    }
+
     // GET /api/recipes
     [HttpGet("recipes")]
     public async Task<IActionResult> GetAllRecipes()
@@ -95,6 +110,15 @@ public class DataApiController(AppDbContext db) : ControllerBase
             r.RecipeCost)));
     }
 
+    // GET /api/loottables/{name}
+    [HttpGet("loottables/{name}")]
+    public async Task<IActionResult> GetLootTable(string name)
+    {
+        var t = await db.LootTables.Include(l => l.Entries).FirstOrDefaultAsync(l => l.LootTableName == name);
+        if (t is null) return NotFound();
+        return Ok(new LootTableDto(t.Id, t.LootTableName, t.Entries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
+    }
+
     // GET /api/loottables
     [HttpGet("loottables")]
     public async Task<IActionResult> GetAllLootTables()
@@ -104,6 +128,23 @@ public class DataApiController(AppDbContext db) : ControllerBase
             t.Id, t.LootTableName,
             t.Entries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))
         )));
+    }
+
+    // GET /api/npcshops/{name}
+    [HttpGet("npcshops/{name}")]
+    public async Task<IActionResult> GetNpcShop(string name)
+    {
+        var s = await db.NpcsShop.Include(s => s.LootTable).FirstOrDefaultAsync(s => s.Name == name);
+        if (s is null) return NotFound();
+        var recipeIds = JsonSerializer.Deserialize<List<long>>(s.Recipes) ?? [];
+        var recipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
+        return Ok(new NpcShopDto(s.Id, s.Name,
+            recipes.Select(r => new RecipeDto(
+                r.Id, r.RecipeName,
+                JsonSerializer.Deserialize<IEnumerable<CreateRecipeInputItemDto>>(r.InputItems ?? "[]") ?? [],
+                JsonSerializer.Deserialize<IEnumerable<string>>(r.OutputItems ?? "[]") ?? [],
+                r.RecipeCost)),
+            s.LootTable?.LootTableId, s.LootTable?.LootTableName));
     }
 
     // GET /api/npcshops
@@ -155,6 +196,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             await db.SaveChangesAsync();
 
             await tx.CommitAsync();
+            await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", existing.Id);
             return Ok(new LootTableDto(existing.Id, existing.LootTableName, savedEntries.Select(e => new LootTableEntryDto(e.Id, e.ItemId, e.Probability, e.MinAmount, e.MaxAmount))));
         }
         catch (Exception ex)
@@ -191,6 +233,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
+            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", existing.Id);
             return Ok(new RecipeDto(existing.Id, existing.RecipeName, dto.InputItems ?? [], dto.OutputItems ?? [], existing.RecipeCost));
         }
         catch (Exception ex)
@@ -248,6 +291,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             }
             await db.SaveChangesAsync();
             await tx.CommitAsync();
+            await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", existingShop.Id);
 
             var createdRecipes = await db.Recipes.Where(r => recipeIds.Contains(r.Id)).ToListAsync();
             return Ok(new NpcShopDto(
@@ -278,6 +322,7 @@ public class DataApiController(AppDbContext db) : ControllerBase
             var existing = await db.Items.FirstOrDefaultAsync(i => i.Id == dto.Id);
             IActionResult result = existing is null ? await InsertItem(dto) : await UpdateItem(dto, existing);
             await tx.CommitAsync();
+            await hub.Clients.All.SendAsync("EntityUpdated", "Item", dto.Id);
             return result;
         }
         catch (Exception ex)

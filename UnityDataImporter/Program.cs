@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UnityDataImporter.Data;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/").AllowAnonymousToPage("/Login"));
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
 {
     o.ValueLengthLimit = int.MaxValue;
@@ -63,5 +66,21 @@ app.MapStaticAssets();
 app.MapControllers().AllowAnonymous();
 app.MapRazorPages()
    .WithStaticAssets();
+
+app.MapHub<DataHub>("/hub/data");
+
+// API key login endpoint for Unity clients
+app.MapPost("/api/auth/login", async (HttpContext ctx) =>
+{
+    var expectedKey = Environment.GetEnvironmentVariable("API_KEY");
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != expectedKey)
+        return Results.Unauthorized();
+
+    var claims = new[] { new System.Security.Claims.Claim("client", "unity") };
+    var identity = new System.Security.Claims.ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+    await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+    return Results.Ok(new { message = "authenticated" });
+}).AllowAnonymous();
 
 app.Run();
