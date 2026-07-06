@@ -37,7 +37,7 @@
                 <label>📋 Copiar de item existente</label>
                 <select class="form-select" id="copyFromItem" onchange="copyItemData(this.value)">
                     <option value="">- Ninguno -</option>
-                    @foreach (var item in Model.Items)
+                    @foreach (var item in Model.AllItemsForLookup)
                     {
                         <option value="@item.Id">@(item.Name ?? item.Id)</option>
                     }
@@ -403,7 +403,7 @@
                                     {
                                         <span style="width:32px;height:32px;background:var(--border-subtle);border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-faint)">?</span>
                                     }
-                                    <input type="file" id="icon-input-@item.Id" name="EditIcon" accept=".png,.jpg,.jpeg" style="display:none" />
+                                    <input type="file" id="icon-input-@item.Id" name="EditIcon" accept=".png,.jpg,.jpeg" style="display:none" onchange="previewIcon('@item.Id', this)" />
                                     <button type="button" class="btn btn-ghost btn-xs icon-upload-btn" id="icon-btn-@item.Id" onclick="document.getElementById('icon-input-@item.Id').click()">Cambiar</button>
                                 </span>
                             </div>
@@ -642,11 +642,37 @@
     </div>
 
     <datalist id="ammoItemList">
-        @foreach (var i in Model.Items)
+        @foreach (var i in Model.AllItemsForLookup)
         {
             <option value="@i.Id">@(i.Name != null ? $"{i.Id} — {i.Name}" : i.Id)</option>
         }
     </datalist>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:1.5rem">
+            @if (Model.CurrentPage > 1)
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@(Model.CurrentPage - 1)">← Anterior</a>
+            }
+            @for (int p = 1; p <= Model.TotalPages; p++)
+            {
+                if (p == Model.CurrentPage)
+                {
+                    <span class="btn btn-primary btn-sm" style="pointer-events:none">@p</span>
+                }
+                else
+                {
+                    <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@p">@p</a>
+                }
+            }
+            @if (Model.CurrentPage < Model.TotalPages)
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="/Items?page=@(Model.CurrentPage + 1)">Siguiente →</a>
+            }
+        </nav>
+    }
 </div>
 
 <script>
@@ -655,7 +681,7 @@
 
     // ── Item data for copy ─────────────────────────────────────────────
     const itemsData = {
-        @foreach (var item in Model.Items)
+        @foreach (var item in Model.AllItemsForLookup)
         {
             <text>'@item.Id': {
                 name: '@(item.Name?.Replace("'", "\\'") ?? "")',
@@ -697,6 +723,24 @@
         onNewItemTypeChange(f.querySelector('[name="NewItem.ItemType"]'));
         onNewCanBlockChange(f.querySelector('[name="NewItem.CanBlock"]'));
         onStackableChange(f.querySelector('[name="NewItem.IsStackable"]'));
+    }
+
+    function previewIcon(itemId, input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const container = input.closest('.ivalue');
+            let img = container.querySelector('img');
+            if (!img) {
+                const placeholder = container.querySelector('span');
+                if (placeholder) placeholder.remove();
+                img = document.createElement('img');
+                img.style.cssText = 'width:32px;height:32px;object-fit:contain;image-rendering:pixelated;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:2px';
+                container.insertBefore(img, container.firstChild);
+            }
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 
     // ── Pending state per item ──────────────────────────────────────────────

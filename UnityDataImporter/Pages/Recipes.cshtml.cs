@@ -15,6 +15,9 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     public IReadOnlyDictionary<string, Item> ItemsById { get; set; } = new Dictionary<string, Item>();
     public long? FilteredRecipeId { get; set; }
     public long? ReturnShopId { get; set; }
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public const int PageSize = 10;
 
     [BindProperty] public string NewRecipeName { get; set; } = string.Empty;
     [BindProperty] public int? NewRecipeCost { get; set; }
@@ -30,12 +33,23 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     private IActionResult RedirectBack() =>
         ReturnShopIdPost.HasValue ? RedirectToPage("/NpcShops") : RedirectToPage();
 
-    public async Task OnGetAsync(long? recipeId, long? returnShopId)
+    public async Task OnGetAsync(long? recipeId, long? returnShopId, int page = 1)
     {
         FilteredRecipeId = recipeId;
         ReturnShopId = returnShopId;
-        var all = await recipeRepository.GetAllAsync();
-        Recipes = recipeId.HasValue ? all.Where(r => r.Id == recipeId.Value) : all;
+        var all = (await recipeRepository.GetAllAsync()).ToList();
+        if (recipeId.HasValue)
+        {
+            Recipes = all.Where(r => r.Id == recipeId.Value);
+            TotalPages = 1;
+            CurrentPage = 1;
+        }
+        else
+        {
+            TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
+            CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+            Recipes = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+        }
         AllItems = await itemRepository.GetAllAsync();
         ItemsById = AllItems.ToDictionary(i => i.Id);
     }

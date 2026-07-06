@@ -11,15 +11,21 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
 {
     public IEnumerable<LootTable> LootTables { get; set; } = [];
     public IEnumerable<Item> AllItems { get; set; } = [];
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public const int PageSize = 10;
 
     [BindProperty] public LootTableData NewEntry { get; set; } = new();
     [BindProperty] public string? NewTableName { get; set; }
     [BindProperty] public List<LootTableEntryEditDto> Entries { get; set; } = [];
     [BindProperty] public string? SaveEntriesTableId { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(int page = 1)
     {
-        LootTables = await lootTableRepository.GetAllAsync();
+        var all = (await lootTableRepository.GetAllAsync()).ToList();
+        TotalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
+        CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+        LootTables = all.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
         AllItems = await itemRepository.GetAllAsync();
     }
 

@@ -13,6 +13,10 @@ namespace UnityDataImporter.Pages;
 public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository magicAttackRepository, AppDbContext db, IHubContext<DataHub> hub) : PageModel
 {
     public IEnumerable<Item> Items { get; set; } = [];
+    public IEnumerable<Item> AllItemsForLookup { get; set; } = [];
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public const int PageSize = 10;
     public IEnumerable<string> Rarities { get; set; } = [];
     public IEnumerable<string> ItemTypes { get; set; } = [];
     public IEnumerable<string> EquipmentSlots { get; set; } = [];
@@ -56,11 +60,24 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
     [BindProperty] public bool DeleteParryAudio { get; set; }
     [BindProperty] public string? EditItemId { get; set; }
 
-    public async Task OnGetAsync(string? itemId)
+    public async Task OnGetAsync(string? itemId, int page = 1)
     {
         FilteredItemId = itemId;
         var all = await itemRepository.GetAllAsync();
-        Items = itemId is not null ? all.Where(i => i.Id == itemId) : all;
+        AllItemsForLookup = all;
+        if (itemId is not null)
+        {
+            Items = all.Where(i => i.Id == itemId);
+            TotalPages = 1;
+            CurrentPage = 1;
+        }
+        else
+        {
+            var list = all.ToList();
+            TotalPages = (int)Math.Ceiling(list.Count / (double)PageSize);
+            CurrentPage = Math.Clamp(page, 1, Math.Max(1, TotalPages));
+            Items = list.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+        }
         await LoadLookupsAsync();
         var allMagicAttacks = await magicAttackRepository.GetAllAsync();
         MagicAttacksByItem = allMagicAttacks.ToLookup(m => m.ItemId ?? "");
