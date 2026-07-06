@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Models;
 using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class LootTablesModel(LootTableRepository lootTableRepository, ItemRepository itemRepository) : PageModel
+public class LootTablesModel(LootTableRepository lootTableRepository, ItemRepository itemRepository, IHubContext<DataHub> hub) : PageModel
 {
     public IEnumerable<LootTable> LootTables { get; set; } = [];
     public IEnumerable<Item> AllItems { get; set; } = [];
@@ -22,7 +24,8 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
 
     public async Task<IActionResult> OnPostAddTableAsync()
     {
-        await lootTableRepository.AddAsync(NewTableName);
+        var t = await lootTableRepository.AddAsync(NewTableName);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", t?.Id);
         return RedirectToPage();
     }
 
@@ -36,6 +39,7 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     {
         ModelState.Clear();
         await lootTableRepository.AddEntryAsync(NewEntry);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", NewEntry.LootTableId);
         return RedirectToPage();
     }
 
@@ -43,12 +47,14 @@ public class LootTablesModel(LootTableRepository lootTableRepository, ItemReposi
     {
         ModelState.Clear();
         await lootTableRepository.UpdateEntriesAsync(Entries);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", (object?)null);
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteEntryAsync(long id)
     {
         await lootTableRepository.DeleteEntryAsync(id);
+        await hub.Clients.All.SendAsync("EntityUpdated", "LootTable", id);
         return RedirectToPage();
     }
 }

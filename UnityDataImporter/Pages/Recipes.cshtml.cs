@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Models;
 using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class RecipesModel(RecipeRepository recipeRepository, ItemRepository itemRepository) : PageModel
+public class RecipesModel(RecipeRepository recipeRepository, ItemRepository itemRepository, IHubContext<DataHub> hub) : PageModel
 {
     public IEnumerable<Recipe> Recipes { get; set; } = [];
     public IEnumerable<Item> AllItems { get; set; } = [];
@@ -41,7 +43,10 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     public async Task<IActionResult> OnPostAddRecipeAsync()
     {
         if (!string.IsNullOrWhiteSpace(NewRecipeName))
-            await recipeRepository.AddAsync(NewRecipeName, NewRecipeCost);
+        {
+            var r = await recipeRepository.AddAsync(NewRecipeName, NewRecipeCost);
+            await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", r?.Id);
+        }
         return RedirectBack();
     }
 
@@ -50,6 +55,7 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
         ModelState.Clear();
         var items = EditInputItems.Select(e => new RecipeInputItem(e.ItemId, e.Amount)).ToList();
         await recipeRepository.UpdateAsync(id, EditRecipeName, EditRecipeCost, items);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", id);
         return RedirectBack();
     }
 
@@ -63,12 +69,14 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         ModelState.Clear();
         await recipeRepository.AddInputItemAsync(TargetRecipeId, InputItemId, InputItemAmount);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", TargetRecipeId);
         return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveInputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveInputItemAsync(recipeId, itemId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", recipeId);
         return RedirectBack();
     }
 
@@ -76,12 +84,14 @@ public class RecipesModel(RecipeRepository recipeRepository, ItemRepository item
     {
         ModelState.Clear();
         await recipeRepository.AddOutputItemAsync(TargetRecipeId, OutputItemId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", TargetRecipeId);
         return RedirectBack();
     }
 
     public async Task<IActionResult> OnPostRemoveOutputItemAsync(long recipeId, string itemId)
     {
         await recipeRepository.RemoveOutputItemAsync(recipeId, itemId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Recipe", recipeId);
         return RedirectBack();
     }
 

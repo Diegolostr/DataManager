@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Models;
 using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository recipeRepository, LootTableRepository lootTableRepository, ItemRepository itemRepository) : PageModel
+public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository recipeRepository, LootTableRepository lootTableRepository, ItemRepository itemRepository, IHubContext<DataHub> hub) : PageModel
 {
     public IEnumerable<NpcShop> Shops { get; set; } = [];
     public IEnumerable<Recipe> AllRecipes { get; set; } = [];
@@ -31,7 +33,8 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
 
     public async Task<IActionResult> OnPostAddShopAsync()
     {
-        await npcShopRepository.AddAsync(NewShopLootTableId, NewShopName);
+        var s = await npcShopRepository.AddAsync(NewShopLootTableId, NewShopName);
+        await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", s?.Id);
         return RedirectToPage();
     }
 
@@ -45,12 +48,14 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     {
         ModelState.Clear();
         await npcShopRepository.AddRecipeAsync(TargetShopId, AddRecipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", TargetShopId);
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostRemoveRecipeAsync(long shopId, long recipeId)
     {
         await npcShopRepository.RemoveRecipeAsync(shopId, recipeId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", shopId);
         return RedirectToPage();
     }
 
@@ -58,6 +63,7 @@ public class NpcShopsModel(NpcShopRepository npcShopRepository, RecipeRepository
     {
         ModelState.Clear();
         await npcShopRepository.UpdateLootTableAsync(TargetShopId, EditLootTableId);
+        await hub.Clients.All.SendAsync("EntityUpdated", "NpcShop", TargetShopId);
         return RedirectToPage();
     }
 

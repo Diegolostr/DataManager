@@ -1,14 +1,16 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using UnityDataImporter.Data;
+using UnityDataImporter.Hubs;
 using UnityDataImporter.Models;
 using UnityDataImporter.Repositories;
 
 namespace UnityDataImporter.Pages;
 
-public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository magicAttackRepository, AppDbContext db) : PageModel
+public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository magicAttackRepository, AppDbContext db, IHubContext<DataHub> hub) : PageModel
 {
     public IEnumerable<Item> Items { get; set; } = [];
     public IEnumerable<string> Rarities { get; set; } = [];
@@ -74,6 +76,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
         var blockSound = await ReadFileAsync(NewBlockSound);
         var parryAudio = await ReadFileAsync(NewParryAudio);
         await itemRepository.AddItemAsync(NewItem, blockSound, parryAudio, NewBlockSound?.FileName, NewParryAudio?.FileName);
+        await hub.Clients.All.SendAsync("EntityUpdated", "Item", NewItem.Id);
         return RedirectBack();
     }
 
@@ -264,6 +267,7 @@ public class ItemsModel(ItemRepository itemRepository, MagicAttackRepository mag
             }
         }
 
+        await hub.Clients.All.SendAsync("EntityUpdated", "Item", itemId);
         return RedirectBack();
     }
 
