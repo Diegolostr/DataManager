@@ -358,6 +358,31 @@
         </div>
     </div>
 
+    <!-- Recent Items -->
+    @if (Model.RecentItems.Any())
+    {
+        <div class="recent-items" style="margin-bottom:1rem">
+            <h3 style="font-size:0.85rem;font-weight:700;color:var(--text-muted);margin-bottom:0.5rem">🕒 Últimos items editados</h3>
+            <div style="display:flex;flex-direction:column;gap:0.25rem">
+                @foreach (var item in Model.RecentItems)
+                {
+                    <a asp-page="Items" asp-route-itemId="@item.Id" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.625rem;background:var(--bg-card);border:1px solid var(--border-subtle);text-decoration:none;color:inherit;transition:border-color 0.15s">
+                        @if (item.Icon != null)
+                        {
+                            <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(item.Icon)" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated" />
+                        }
+                        else
+                        {
+                            <span style="width:24px;height:24px;background:var(--border-subtle);display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--text-faint)">?</span>
+                        }
+                        <span style="font-size:0.8rem;font-weight:500">@(item.Name ?? item.Id)</span>
+                        <span style="font-size:0.7rem;color:var(--text-faint);margin-left:auto">@item.UpdatedAt?.ToString("dd/MM HH:mm")</span>
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
     <details class="section-foldout">
         <summary class="section-foldout-header">📦 Items <span class="section-foldout-count">(@Model.Items.Count())</span></summary>
         <div class="section-foldout-body">

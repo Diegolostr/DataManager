@@ -23,6 +23,7 @@ public class Item
     public long? ItemSoundType { get; set; }
     public string? HoldType { get; set; }
     public string? ItemAnimations { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public WeaponData? Weapon { get; set; }
     public Vector2? Size { get; set; }

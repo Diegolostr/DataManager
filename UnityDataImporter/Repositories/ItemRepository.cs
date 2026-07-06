@@ -37,6 +37,7 @@ public class ItemRepository(AppDbContext db)
         db.Vector2.Add(size);
         await db.SaveChangesAsync();
         item.ItemSize = size.Id;
+        item.UpdatedAt = DateTime.UtcNow;
         db.Items.Add(item);
         await db.SaveChangesAsync();
     }
@@ -47,6 +48,7 @@ public class ItemRepository(AppDbContext db)
         await HandleAudios(item, existing, blockSoundBytes, parryAudioBytes, blockSoundName, parryAudioName);
         if (item.Icon is null && existing?.Icon is not null)
             item.Icon = existing.Icon;
+        item.UpdatedAt = DateTime.UtcNow;
         db.Items.Update(item);
         await db.SaveChangesAsync();
     }

@@ -115,6 +115,15 @@
 
                 <summary class="recipe-header" onclick="handleRecipeSummary(event, @recipe.Id)">
                     <div class="d-flex align-items-center gap-3">
+                        <!-- icono del primer output item -->
+                        @{
+                            var firstOut = outputItems.FirstOrDefault();
+                            var firstOutItem = firstOut != null ? Model.ItemsById.GetValueOrDefault(firstOut) : null;
+                        }
+                        @if (firstOutItem?.Icon != null)
+                        {
+                            <img src="data:image/png;base64,@UnityDataImporter.Utils.ImageUtils.ToBase64(firstOutItem.Icon)" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;flex-shrink:0" />
+                        }
                         <!-- vista -->
                         <span class="recipe-name recipe-view-name">@recipe.RecipeName</span>
                         @if (recipe.RecipeCost.HasValue)

@@ -15,6 +15,7 @@ public record NpcShopPreview(long Id, int RecipeCount, string? LootTableName, st
 public class IndexModel(ItemRepository itemRepository, LootTableRepository lootTableRepository, RecipeRepository recipeRepository, NpcShopRepository npcShopRepository, AppDbContext db) : PageModel
 {
     public IEnumerable<Item> Items { get; set; } = [];
+    public IEnumerable<Item> RecentItems { get; set; } = [];
     public IEnumerable<string> ItemTypes { get; set; } = [];
     public IEnumerable<string> EquipmentSlots { get; set; } = [];
     public IEnumerable<string> HoldTypes { get; set; } = [];
@@ -222,6 +223,7 @@ public class IndexModel(ItemRepository itemRepository, LootTableRepository lootT
     private async Task LoadAllAsync()
     {
         Items = await itemRepository.GetAllAsync();
+        RecentItems = Items.Where(i => i.UpdatedAt.HasValue).OrderByDescending(i => i.UpdatedAt).Take(5).ToList();
         ItemTypes = await db.ItemType.Select(t => t.Id).ToListAsync();
         EquipmentSlots = await db.EquipmentSlotType.Select(e => e.Id).ToListAsync();
         HoldTypes = await db.HoldType.Select(h => h.Id).ToListAsync();
